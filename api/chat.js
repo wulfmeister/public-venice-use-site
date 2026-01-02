@@ -197,7 +197,10 @@ export default async function handler(request) {
         messages: body.messages,
         max_tokens: Math.min(body.max_tokens || 2048, 4096),
         temperature: body.temperature ?? 0.7,
-        stream: stream
+        stream: stream,
+        venice_parameters: {
+          enable_web_search: body.enable_web_search || "auto"
+        }
       })
     });
 

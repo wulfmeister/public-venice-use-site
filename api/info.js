@@ -49,6 +49,7 @@ export default async function handler(request) {
 
   // Fetch available models from Venice API
   let models = [];
+  let modelCapabilities = {};
   let blockedModels = [];
   try {
     const response = await fetch(`${VENICE_BASE_URL}/models?type=text`, {
@@ -64,11 +65,21 @@ export default async function handler(request) {
 
     const data = await response.json();
     
-    // Filter models by price threshold
+    // Filter models by price threshold and collect capabilities
     const allModels = data.data.filter(model => model.type === "text");
     
     for (const model of allModels) {
       const pricing = model.model_spec?.pricing;
+      const capabilities = model.model_spec?.capabilities || {};
+      
+      // Store model capabilities
+      modelCapabilities[model.id] = {
+        supportsWebSearch: capabilities.supportsWebSearch || false,
+        supportsFunctionCalling: capabilities.supportsFunctionCalling || false,
+        supportsVision: capabilities.supportsVision || false,
+        supportsReasoning: capabilities.supportsReasoning || false
+      };
+      
       if (pricing) {
         const inputPrice = pricing.input?.usd || 0;
         const outputPrice = pricing.output?.usd || 0;
@@ -92,16 +103,26 @@ export default async function handler(request) {
   } catch (error) {
     // Fallback to hardcoded models if API call fails
     models = [
+      "venice-uncensored",
       "llama-3.3-70b",
       "deepseek-r1-distill-llama-70b", 
       "dolphin-2.9.2-qwen2-72b"
     ];
+    
+    // Set default capabilities for fallback models
+    modelCapabilities = {
+      "venice-uncensored": { supportsWebSearch: true, supportsFunctionCalling: true, supportsVision: false, supportsReasoning: false },
+      "llama-3.3-70b": { supportsWebSearch: true, supportsFunctionCalling: true, supportsVision: false, supportsReasoning: false },
+      "deepseek-r1-distill-llama-70b": { supportsWebSearch: true, supportsFunctionCalling: true, supportsVision: false, supportsReasoning: true },
+      "dolphin-2.9.2-qwen2-72b": { supportsWebSearch: true, supportsFunctionCalling: true, supportsVision: false, supportsReasoning: false }
+    };
   }
 
   return new Response(JSON.stringify({
     name: "Venice AI Community Proxy",
     version: "1.0.0",
     models: models,
+    model_capabilities: modelCapabilities,
     rate_limit: {
       requests: RATE_LIMIT,
       window: "1 hour",
