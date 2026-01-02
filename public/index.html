@@ -398,9 +398,7 @@
     <h1>🎁 Free <span>Venice AI</span> Chat</h1>
     <div class="header-controls">
       <select class="model-select" id="modelSelect">
-        <option value="llama-3.3-70b">Llama 3.3 70B</option>
-        <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 Distill 70B</option>
-        <option value="dolphin-2.9.2-qwen2-72b">Dolphin Qwen2 72B</option>
+        <option value="">Loading models...</option>
       </select>
       <div class="rate-limit">
         <strong id="remaining">20</strong>/20 requests
@@ -466,11 +464,8 @@
         loadChatHistory();
       }
 
-      // Load saved model preference
-      const savedModel = localStorage.getItem('selectedModel');
-      if (savedModel) {
-        modelSelect.value = savedModel;
-      }
+      // Fetch available models
+      fetchModels();
 
       // Auto-resize textarea
       userInput.addEventListener('input', autoResize);
@@ -487,6 +482,71 @@
           sendMessage();
         }
       });
+    }
+
+    // Fetch available models from the API
+    async function fetchModels() {
+      try {
+        const response = await fetch('/api/info');
+        if (!response.ok) {
+          throw new Error('Failed to fetch models');
+        }
+        
+        const data = await response.json();
+        const models = data.models || [];
+        
+        // Clear existing options
+        modelSelect.innerHTML = '';
+        
+        // Add model options
+        models.forEach(modelId => {
+          const option = document.createElement('option');
+          option.value = modelId;
+          // Create a readable name from the model ID
+          option.textContent = formatModelName(modelId);
+          modelSelect.appendChild(option);
+        });
+        
+        // Restore saved model preference if it exists and is still valid
+        const savedModel = localStorage.getItem('selectedModel');
+        if (savedModel && models.includes(savedModel)) {
+          modelSelect.value = savedModel;
+        } else if (models.length > 0) {
+          // Default to first available model
+          modelSelect.value = models[0];
+          localStorage.setItem('selectedModel', models[0]);
+        }
+        
+      } catch (error) {
+        console.error('Error fetching models:', error);
+        // Fallback to hardcoded models
+        const fallbackModels = [
+          { id: 'llama-3.3-70b', name: 'Llama 3.3 70B' },
+          { id: 'deepseek-r1-distill-llama-70b', name: 'DeepSeek R1 Distill 70B' },
+          { id: 'dolphin-2.9.2-qwen2-72b', name: 'Dolphin Qwen2 72B' }
+        ];
+        
+        modelSelect.innerHTML = '';
+        fallbackModels.forEach(model => {
+          const option = document.createElement('option');
+          option.value = model.id;
+          option.textContent = model.name;
+          modelSelect.appendChild(option);
+        });
+        
+        const savedModel = localStorage.getItem('selectedModel');
+        if (savedModel) {
+          modelSelect.value = savedModel;
+        }
+      }
+    }
+
+    // Format model ID into a readable name
+    function formatModelName(modelId) {
+      return modelId
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
     }
 
     function autoResize() {

@@ -1,12 +1,7 @@
 // Venice AI Community Proxy - Info Endpoint
 // Returns available models and rate limit information
 
-const ALLOWED_MODELS = [
-  "llama-3.3-70b",
-  "deepseek-r1-distill-llama-70b",
-  "dolphin-2.9.2-qwen2-72b"
-];
-
+const VENICE_BASE_URL = "https://api.venice.ai/api/v1";
 const RATE_LIMIT = 20;
 
 const corsHeaders = {
@@ -36,10 +31,50 @@ export default async function handler(request) {
     });
   }
 
+  // Check for API key
+  const apiKey = process.env.VENICE_API_KEY;
+  if (!apiKey) {
+    return new Response(JSON.stringify({
+      error: "Server configuration error",
+      message: "Venice API key not configured"
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
+  }
+
+  // Fetch available models from Venice API
+  let models = [];
+  try {
+    const response = await fetch(`${VENICE_BASE_URL}/models?type=text`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Venice API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    // Extract model IDs from the response
+    models = data.data
+      .filter(model => model.type === "text")
+      .map(model => model.id);
+  } catch (error) {
+    // Fallback to hardcoded models if API call fails
+    models = [
+      "llama-3.3-70b",
+      "deepseek-r1-distill-llama-70b", 
+      "dolphin-2.9.2-qwen2-72b"
+    ];
+  }
+
   return new Response(JSON.stringify({
     name: "Venice AI Community Proxy",
     version: "1.0.0",
-    models: ALLOWED_MODELS,
+    models: models,
     rate_limit: {
       requests: RATE_LIMIT,
       window: "1 hour",

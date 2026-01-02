@@ -3,17 +3,48 @@
 
 const VENICE_BASE_URL = "https://api.venice.ai/api/v1";
 
-const ALLOWED_MODELS = [
-  "llama-3.3-70b",
-  "deepseek-r1-distill-llama-70b",
-  "dolphin-2.9.2-qwen2-72b"
-];
+// Cache for allowed models (resets on cold start)
+let ALLOWED_MODELS = null;
 
 const RATE_LIMIT = 20;
 const RATE_WINDOW = 3600000; // 1 hour in ms
 
 // In-memory rate limiting (resets on cold start)
 const rateLimitMap = new Map();
+
+// Fetch allowed models from Venice API
+async function fetchAllowedModels() {
+  if (ALLOWED_MODELS !== null) {
+    return ALLOWED_MODELS;
+  }
+
+  try {
+    const response = await fetch(`${VENICE_BASE_URL}/models?type=text`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${process.env.VENICE_API_KEY}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      ALLOWED_MODELS = data.data
+        .filter(model => model.type === "text")
+        .map(model => model.id);
+    } else {
+      throw new Error(`Venice API error: ${response.status}`);
+    }
+  } catch (error) {
+    // Fallback to hardcoded models if API call fails
+    ALLOWED_MODELS = [
+      "llama-3.3-70b",
+      "deepseek-r1-distill-llama-70b",
+      "dolphin-2.9.2-qwen2-72b"
+    ];
+  }
+
+  return ALLOWED_MODELS;
+}
 
 // CORS headers
 const corsHeaders = {
@@ -99,10 +130,11 @@ export default async function handler(request) {
   }
 
   // Validate model
-  if (!body.model || !ALLOWED_MODELS.includes(body.model)) {
+  const allowedModels = await fetchAllowedModels();
+  if (!body.model || !allowedModels.includes(body.model)) {
     return new Response(JSON.stringify({
       error: "Invalid or disallowed model",
-      allowed_models: ALLOWED_MODELS
+      allowed_models: allowedModels
     }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" }
