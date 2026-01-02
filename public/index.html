@@ -166,15 +166,21 @@
       vertical-align: super;
       line-height: 1;
       margin: 0 2px;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: rgba(139, 92, 246, 0.1);
+      transition: all 0.2s ease;
     }
 
     .citation-link:hover {
       color: #06b6d4;
       text-decoration: underline;
+      background: rgba(6, 182, 212, 0.1);
     }
 
     .citation-link:active {
       color: #a855f7;
+      transform: translateY(1px);
     }
 
     /* Citations section styling */
@@ -196,17 +202,36 @@
     .citation-item {
       margin-bottom: 0.75rem;
       font-size: 0.85rem;
+      padding: 0.5rem;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.02);
+      transition: background-color 0.2s ease;
     }
 
-    .citation-item a {
+    .citation-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .citation-source-link {
       color: #8b5cf6;
       text-decoration: none;
       word-break: break-all;
+      display: block;
+      line-height: 1.4;
     }
 
-    .citation-item a:hover {
+    .citation-source-link:hover {
       color: #06b6d4;
       text-decoration: underline;
+    }
+
+    .citation-source-link[href="#"] {
+      color: #ef4444;
+      font-style: italic;
+    }
+
+    .citation-source-link[href="#"]:hover {
+      color: #dc2626;
     }
 
     @media (max-width: 400px) {
@@ -881,10 +906,21 @@
       if (chatHistory.length > 0) {
         welcomeMessage.style.display = 'none';
         chatHistory.forEach(msg => {
-          if (msg.citations) {
-            citationDocuments = msg.citations;
+          if (msg.citations && typeof msg.citations === 'object' && Object.keys(msg.citations).length > 0) {
+            // Validate citations before using them
+            const validCitations = {};
+            Object.entries(msg.citations).forEach(([id, citation]) => {
+              if (citation && typeof citation === 'object' && citation.id) {
+                validCitations[id] = citation;
+              } else {
+                console.warn('Invalid citation in chat history:', id, citation);
+              }
+            });
+            
+            citationDocuments = validCitations;
             appendMessage(msg.role, msg.content, false);
-            if (msg.role === 'assistant' && Object.keys(msg.citations).length > 0) {
+            
+            if (msg.role === 'assistant' && Object.keys(citationDocuments).length > 0) {
               const messages = document.querySelectorAll('.message.assistant');
               const lastMessage = messages[messages.length - 1];
               if (lastMessage) {
@@ -947,6 +983,9 @@
     }
 
     function formatMessage(content) {
+      // Get ordered list of citation IDs for proper indexing
+      const citationIds = Object.keys(citationDocuments);
+      
       // Basic markdown-like formatting
       let formatted = content
         // Escape HTML
@@ -957,10 +996,29 @@
         .replace(/\[REF\](\d+(?:,\d+)*)\[\/REF\]/g, (match, numbers) => {
           const citationList = numbers.split(',');
           return citationList.map(citationNum => {
-            const num = citationNum.trim();
-            const citation = citationDocuments[num];
-            const href = citation?.metadata?.url || `#citation-${num}`;
-            return `<a href="${href}" class="citation-link" data-citation="${num}" target="_blank">[${num}]</a>`;
+            const num = parseInt(citationNum.trim());
+            if (num < 1 || num > citationIds.length) {
+              console.warn(`Invalid citation number: ${num}. Available: 1-${citationIds.length}`);
+              return `[${num}]`;
+            }
+            
+            const citationId = citationIds[num - 1]; // Convert 1-based to 0-based
+            const citation = citationDocuments[citationId];
+            
+            if (!citation) {
+              console.warn(`Citation not found for ID: ${citationId}`);
+              return `[${num}]`;
+            }
+            
+            // Validate and clean URL
+            let href = citation?.metadata?.url;
+            if (!href || !isValidUrl(href)) {
+              href = `#citation-${num}`;
+              console.warn(`Invalid or missing URL for citation ${num}:`, href);
+            }
+            
+            const title = citation?.metadata?.title || `Source ${num}`;
+            return `<a href="${href}" class="citation-link" data-citation="${citationId}" data-citation-num="${num}" title="${escapeHtml(title)}" target="_blank">[${num}]</a>`;
           }).join('');
         })
         // Code blocks
@@ -975,6 +1033,23 @@
         .replace(/\n/g, '<br>');
       
       return formatted;
+    }
+
+    // Helper function to validate URLs
+    function isValidUrl(string) {
+      try {
+        const url = new URL(string);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+      } catch (_) {
+        return false;
+      }
+    }
+
+    // Helper function to escape HTML in titles
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
     function showTypingIndicator() {
@@ -1017,6 +1092,11 @@
     function addCitationsSection(contentDiv) {
       const messageDiv = contentDiv.parentElement;
       
+      if (Object.keys(citationDocuments).length === 0) {
+        console.warn('No citations to display');
+        return;
+      }
+      
       // Create citations section
       const citationsSection = document.createElement('div');
       citationsSection.className = 'citations-section';
@@ -1026,22 +1106,55 @@
       title.textContent = 'Sources:';
       citationsSection.appendChild(title);
       
-      Object.values(citationDocuments).forEach((doc, index) => {
+      // Get citations in the order they appear in the references (numeric order)
+      const citationIds = Object.keys(citationDocuments);
+      citationIds.forEach((citationId, index) => {
+        const doc = citationDocuments[citationId];
+        const citationNumber = index + 1;
+        
+        if (!doc) {
+          console.warn(`Missing citation data for ID: ${citationId}`);
+          return;
+        }
+        
         const citationItem = document.createElement('div');
         citationItem.className = 'citation-item';
         
-        const citationNumber = index + 1;
+        // Validate and get URL
+        let href = doc.metadata?.url;
+        if (!href || !isValidUrl(href)) {
+          href = '#';
+          console.warn(`Invalid or missing URL for citation ${citationNumber}`);
+        }
+        
         const citationLink = document.createElement('a');
-        citationLink.href = doc.metadata.url || '#';
-        citationLink.textContent = `[${citationNumber}] ${doc.metadata.title || 'Untitled Source'}`;
+        citationLink.href = href;
+        citationLink.className = 'citation-source-link';
+        citationLink.setAttribute('data-citation-id', citationId);
+        citationLink.setAttribute('data-citation-num', citationNumber.toString());
         citationLink.target = '_blank';
         citationLink.rel = 'noopener noreferrer';
+        
+        // Get title with fallback
+        const title = doc.metadata?.title || `Source ${citationNumber}`;
+        citationLink.textContent = `[${citationNumber}] ${title}`;
+        
+        // Add hover tooltip for debugging
+        citationLink.title = `Citation ID: ${citationId} | URL: ${href}`;
         
         citationItem.appendChild(citationLink);
         citationsSection.appendChild(citationItem);
       });
       
       messageDiv.appendChild(citationsSection);
+      
+      // Add click handling for citation links to scroll to sources
+      citationsSection.querySelectorAll('.citation-source-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          const citationNum = link.getAttribute('data-citation-num');
+          console.log(`Citation ${citationNum} clicked:`, link.href);
+        });
+      });
     }
 
     function updateRateLimit(remaining) {
@@ -1087,6 +1200,10 @@ isLoading = true;
           })
         });
 
+        // Debug: Check response headers for citation info
+        console.log('📋 Response headers:', Object.fromEntries(response.headers.entries()));
+        console.log('📊 Rate limit remaining:', response.headers.get('X-RateLimit-Remaining'));
+        
         // Update rate limit from headers
         const remaining = response.headers.get('X-RateLimit-Remaining');
         if (remaining) {
@@ -1119,8 +1236,6 @@ isLoading = true;
 
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n');
-          
-          // Keep the last line in buffer as it might be incomplete
           buffer = lines.pop() || '';
 
           for (const line of lines) {
@@ -1131,16 +1246,67 @@ isLoading = true;
 
               try {
                 const parsed = JSON.parse(data);
-                
-                // Handle tool calls for search results
-                if (parsed.type === 'tool_call' && parsed.name === 'venice_web_search_documents') {
-                  const searchDocs = JSON.parse(parsed.arguments);
-                  citationDocuments = searchDocs.documents || [];
-                  searchDocs.documents?.forEach((doc, index) => {
-                    citationDocuments[doc.metadata.id] = doc;
-                  });
+
+                // Debug: Log incoming data
+                console.log('🔍 Streaming data:', parsed.type || 'content', parsed);
+
+                // Unified citation handling with robust error handling
+                try {
+                  if (parsed.venice_parameters?.web_search_citations) {
+                    console.log('🔗 Citations from venice_parameters:', parsed.venice_parameters.web_search_citations);
+                    if (Array.isArray(parsed.venice_parameters.web_search_citations)) {
+                      parsed.venice_parameters.web_search_citations.forEach((citation, index) => {
+                        if (citation && citation.id) {
+                          // Validate citation structure
+                          const validCitation = {
+                            id: citation.id,
+                            metadata: {
+                              title: citation.metadata?.title || `Citation ${index + 1}`,
+                              url: citation.metadata?.url || null,
+                              ...citation.metadata
+                            }
+                          };
+                          citationDocuments[citation.id] = validCitation;
+                        } else {
+                          console.warn('Invalid citation format at index', index, citation);
+                        }
+                      });
+                    } else {
+                      console.warn('web_search_citations is not an array:', parsed.venice_parameters.web_search_citations);
+                    }
+                  } else if (parsed.type === 'tool_call' && parsed.name === 'venice_web_search_documents') {
+                    console.log('🛠️ Tool call venice_web_search_documents');
+                    try {
+                      const searchDocs = JSON.parse(parsed.arguments);
+                      if (searchDocs.documents && typeof searchDocs.documents === 'object') {
+                        // Process each document to ensure consistent structure
+                        Object.entries(searchDocs.documents).forEach(([docId, doc]) => {
+                          if (doc && typeof doc === 'object') {
+                            const validDoc = {
+                              id: docId,
+                              metadata: {
+                                title: doc.metadata?.title || `Source ${docId}`,
+                                url: doc.metadata?.url || null,
+                                ...doc.metadata
+                              }
+                            };
+                            citationDocuments[docId] = validDoc;
+                          } else {
+                            console.warn('Invalid document format for ID:', docId, doc);
+                          }
+                        });
+                      } else {
+                        console.warn('Invalid documents structure in search results:', searchDocs);
+                      }
+                    } catch (parseError) {
+                      console.error('Failed to parse venice_web_search_documents arguments:', parseError);
+                    }
+                  }
+                } catch (citationError) {
+                  console.error('Error processing citations:', citationError);
                 }
-                
+
+                // Content delta
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
                   fullContent += content;
@@ -1149,49 +1315,54 @@ isLoading = true;
                 }
               } catch (e) {
                 console.warn('Failed to parse streaming data:', data, e);
-                // Continue processing other lines
               }
             }
           }
         }
 
-        // Process any remaining data in buffer
-        if (buffer.trim()) {
-          const trimmedLine = buffer.trim();
-          if (trimmedLine.startsWith('data: ')) {
-            const data = trimmedLine.slice(6);
-            if (data !== '[DONE]') {
-              try {
-                const parsed = JSON.parse(data);
-                const content = parsed.choices?.[0]?.delta?.content;
-                if (content) {
-                  fullContent += content;
-                  contentDiv.innerHTML = formatMessage(fullContent);
-                  scrollToBottom();
-                }
-              } catch (e) {
-                console.warn('Failed to parse final streaming data:', data, e);
+        // Process final buffer
+        if (buffer.trim().startsWith('data: ')) {
+          const data = buffer.trim().slice(6);
+          if (data !== '[DONE]') {
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) {
+                fullContent += content;
+                contentDiv.innerHTML = formatMessage(fullContent);
+                scrollToBottom();
               }
+            } catch (e) {
+              console.warn('Failed to parse final data:', data, e);
             }
           }
         }
 
-        // Add citations section if available
+        console.log('🏁 Streaming complete. Citations:', Object.keys(citationDocuments).length);
+        console.log('📚 Citation IDs:', Object.keys(citationDocuments));
+        console.log('📋 Citation summary:', Object.entries(citationDocuments).map(([id, doc]) => ({
+          id,
+          title: doc.metadata?.title || 'No title',
+          hasUrl: !!doc.metadata?.url,
+          urlPreview: doc.metadata?.url ? doc.metadata.url.substring(0, 50) + '...' : null
+        })));
+
+        // Add citations section
         if (Object.keys(citationDocuments).length > 0) {
           addCitationsSection(contentDiv);
         }
 
-        // Save the complete message
+        // Save assistant message
         if (fullContent) {
-          chatHistory.push({ 
-            role: 'assistant', 
+          chatHistory.push({
+            role: 'assistant',
             content: fullContent,
-            citations: citationDocuments 
+            citations: { ...citationDocuments }
           });
           saveChatHistory();
         }
-        
-        // Clear citation data for next message
+
+        // Clear for next
         citationDocuments = {};
 
       } catch (error) {
