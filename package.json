@@ -1,0 +1,20 @@
+{
+  "name": "venice-community-proxy",
+  "version": "1.0.0",
+  "description": "Free community API proxy for Venice.ai with built-in chat UI",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "vercel build",
+    "deploy": "vercel --prod"
+  },
+  "keywords": [
+    "venice",
+    "ai",
+    "proxy",
+    "llm",
+    "chat"
+  ],
+  "author": "",
+  "license": "MIT"
+}
