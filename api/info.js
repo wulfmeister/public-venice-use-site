@@ -4,6 +4,10 @@
 const VENICE_BASE_URL = "https://api.venice.ai/api/v1";
 const RATE_LIMIT = 20;
 
+// Price thresholds per 1M tokens (USD)
+const MAX_INPUT_PRICE = 2.0;   // $2.00 per 1M input tokens
+const MAX_OUTPUT_PRICE = 6.0;  // $6.00 per 1M output tokens
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
@@ -45,6 +49,7 @@ export default async function handler(request) {
 
   // Fetch available models from Venice API
   let models = [];
+  let blockedModels = [];
   try {
     const response = await fetch(`${VENICE_BASE_URL}/models?type=text`, {
       method: "GET",
@@ -58,10 +63,32 @@ export default async function handler(request) {
     }
 
     const data = await response.json();
-    // Extract model IDs from the response
-    models = data.data
-      .filter(model => model.type === "text")
-      .map(model => model.id);
+    
+    // Filter models by price threshold
+    const allModels = data.data.filter(model => model.type === "text");
+    
+    for (const model of allModels) {
+      const pricing = model.model_spec?.pricing;
+      if (pricing) {
+        const inputPrice = pricing.input?.usd || 0;
+        const outputPrice = pricing.output?.usd || 0;
+        
+        if (inputPrice <= MAX_INPUT_PRICE && outputPrice <= MAX_OUTPUT_PRICE) {
+          models.push(model.id);
+        } else {
+          blockedModels.push({
+            id: model.id,
+            name: model.model_spec?.name || model.id,
+            inputPrice: inputPrice,
+            outputPrice: outputPrice,
+            reason: "Exceeds price threshold"
+          });
+        }
+      } else {
+        // If no pricing info, include by default (likely free/cheap)
+        models.push(model.id);
+      }
+    }
   } catch (error) {
     // Fallback to hardcoded models if API call fails
     models = [
@@ -79,6 +106,11 @@ export default async function handler(request) {
       requests: RATE_LIMIT,
       window: "1 hour",
       per: "IP address"
+    },
+    pricing_filter: {
+      max_input_price: MAX_INPUT_PRICE,
+      max_output_price: MAX_OUTPUT_PRICE,
+      blocked_models: blockedModels
     },
     endpoints: {
       chat: "/api/chat",

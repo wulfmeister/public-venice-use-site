@@ -4,7 +4,6 @@
   "description": "Free community API proxy for Venice.ai with built-in chat UI",
   "private": true,
   "scripts": {
-    "dev": "vercel dev",
     "build": "echo 'Static site - no build needed'",
     "deploy": "vercel --prod"
   },

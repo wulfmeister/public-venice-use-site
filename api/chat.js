@@ -6,13 +6,17 @@ const VENICE_BASE_URL = "https://api.venice.ai/api/v1";
 // Cache for allowed models (resets on cold start)
 let ALLOWED_MODELS = null;
 
+// Price thresholds per 1M tokens (USD)
+const MAX_INPUT_PRICE = 2.0;   // $2.00 per 1M input tokens
+const MAX_OUTPUT_PRICE = 6.0;  // $6.00 per 1M output tokens
+
 const RATE_LIMIT = 20;
 const RATE_WINDOW = 3600000; // 1 hour in ms
 
 // In-memory rate limiting (resets on cold start)
 const rateLimitMap = new Map();
 
-// Fetch allowed models from Venice API
+// Fetch allowed models from Venice API with price filtering
 async function fetchAllowedModels() {
   if (ALLOWED_MODELS !== null) {
     return ALLOWED_MODELS;
@@ -28,9 +32,23 @@ async function fetchAllowedModels() {
 
     if (response.ok) {
       const data = await response.json();
-      ALLOWED_MODELS = data.data
-        .filter(model => model.type === "text")
-        .map(model => model.id);
+      const allModels = data.data.filter(model => model.type === "text");
+      
+      ALLOWED_MODELS = [];
+      for (const model of allModels) {
+        const pricing = model.model_spec?.pricing;
+        if (pricing) {
+          const inputPrice = pricing.input?.usd || 0;
+          const outputPrice = pricing.output?.usd || 0;
+          
+          if (inputPrice <= MAX_INPUT_PRICE && outputPrice <= MAX_OUTPUT_PRICE) {
+            ALLOWED_MODELS.push(model.id);
+          }
+        } else {
+          // If no pricing info, include by default (likely free/cheap)
+          ALLOWED_MODELS.push(model.id);
+        }
+      }
     } else {
       throw new Error(`Venice API error: ${response.status}`);
     }
