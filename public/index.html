@@ -158,6 +158,57 @@
       user-select: none;
     }
 
+    .citation-link {
+      color: #8b5cf6;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.85em;
+      vertical-align: super;
+      line-height: 1;
+      margin: 0 2px;
+    }
+
+    .citation-link:hover {
+      color: #06b6d4;
+      text-decoration: underline;
+    }
+
+    .citation-link:active {
+      color: #a855f7;
+    }
+
+    /* Citations section styling */
+    .citations-section {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      border-left: 3px solid #8b5cf6;
+    }
+
+    .citations-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #a1a1aa;
+    }
+
+    .citation-item {
+      margin-bottom: 0.75rem;
+      font-size: 0.85rem;
+    }
+
+    .citation-item a {
+      color: #8b5cf6;
+      text-decoration: none;
+      word-break: break-all;
+    }
+
+    .citation-item a:hover {
+      color: #06b6d4;
+      text-decoration: underline;
+    }
+
     @media (max-width: 400px) {
       .web-search-label {
         display: none;
@@ -630,6 +681,8 @@
     let isLoading = false;
     let modelCapabilities = {};
     let webSearchEnabled = localStorage.getItem('webSearchEnabled') !== 'false';
+    let searchResults = {};
+    let citationDocuments = {};
 
     // DOM Elements
     const tosBanner = document.getElementById('tosBanner');
@@ -828,7 +881,23 @@
       if (chatHistory.length > 0) {
         welcomeMessage.style.display = 'none';
         chatHistory.forEach(msg => {
-          appendMessage(msg.role, msg.content, false);
+          if (msg.citations) {
+            citationDocuments = msg.citations;
+            appendMessage(msg.role, msg.content, false);
+            if (msg.role === 'assistant' && Object.keys(msg.citations).length > 0) {
+              const messages = document.querySelectorAll('.message.assistant');
+              const lastMessage = messages[messages.length - 1];
+              if (lastMessage) {
+                const contentDiv = lastMessage.querySelector('.message-content');
+                if (contentDiv) {
+                  addCitationsSection(contentDiv);
+                }
+              }
+            }
+            citationDocuments = {};
+          } else {
+            appendMessage(msg.role, msg.content, false);
+          }
         });
         scrollToBottom();
       }
@@ -884,6 +953,16 @@
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
+        // Process citations before other formatting
+        .replace(/\[REF\](\d+(?:,\d+)*)\[\/REF\]/g, (match, numbers) => {
+          const citationList = numbers.split(',');
+          return citationList.map(citationNum => {
+            const num = citationNum.trim();
+            const citation = citationDocuments[num];
+            const href = citation?.metadata?.url || `#citation-${num}`;
+            return `<a href="${href}" class="citation-link" data-citation="${num}" target="_blank">[${num}]</a>`;
+          }).join('');
+        })
         // Code blocks
         .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
         // Inline code
@@ -935,6 +1014,36 @@
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
+    function addCitationsSection(contentDiv) {
+      const messageDiv = contentDiv.parentElement;
+      
+      // Create citations section
+      const citationsSection = document.createElement('div');
+      citationsSection.className = 'citations-section';
+      
+      const title = document.createElement('div');
+      title.className = 'citations-title';
+      title.textContent = 'Sources:';
+      citationsSection.appendChild(title);
+      
+      Object.values(citationDocuments).forEach((doc, index) => {
+        const citationItem = document.createElement('div');
+        citationItem.className = 'citation-item';
+        
+        const citationNumber = index + 1;
+        const citationLink = document.createElement('a');
+        citationLink.href = doc.metadata.url || '#';
+        citationLink.textContent = `[${citationNumber}] ${doc.metadata.title || 'Untitled Source'}`;
+        citationLink.target = '_blank';
+        citationLink.rel = 'noopener noreferrer';
+        
+        citationItem.appendChild(citationLink);
+        citationsSection.appendChild(citationItem);
+      });
+      
+      messageDiv.appendChild(citationsSection);
+    }
+
     function updateRateLimit(remaining) {
       remainingDisplay.textContent = remaining;
     }
@@ -969,7 +1078,12 @@ isLoading = true;
               content: m.content
             })),
             stream: true,
-            enable_web_search: webSearchEnabled ? "auto" : "off"
+            enable_web_search: webSearchEnabled ? "auto" : "off",
+            venice_parameters: {
+              include_search_results_in_stream: true,
+              enable_web_citations: true,
+              return_search_results_as_documents: true
+            }
           })
         });
 
@@ -1017,6 +1131,16 @@ isLoading = true;
 
               try {
                 const parsed = JSON.parse(data);
+                
+                // Handle tool calls for search results
+                if (parsed.type === 'tool_call' && parsed.name === 'venice_web_search_documents') {
+                  const searchDocs = JSON.parse(parsed.arguments);
+                  citationDocuments = searchDocs.documents || [];
+                  searchDocs.documents?.forEach((doc, index) => {
+                    citationDocuments[doc.metadata.id] = doc;
+                  });
+                }
+                
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
                   fullContent += content;
@@ -1052,11 +1176,23 @@ isLoading = true;
           }
         }
 
+        // Add citations section if available
+        if (Object.keys(citationDocuments).length > 0) {
+          addCitationsSection(contentDiv);
+        }
+
         // Save the complete message
         if (fullContent) {
-          chatHistory.push({ role: 'assistant', content: fullContent });
+          chatHistory.push({ 
+            role: 'assistant', 
+            content: fullContent,
+            citations: citationDocuments 
+          });
           saveChatHistory();
         }
+        
+        // Clear citation data for next message
+        citationDocuments = {};
 
       } catch (error) {
         removeTypingIndicator();
