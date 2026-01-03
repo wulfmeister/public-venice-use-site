@@ -18,6 +18,190 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Main layout container */
+    .main-container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Sidebar styles */
+    .sidebar {
+      width: 280px;
+      background: rgba(20, 20, 35, 0.98);
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease, width 0.3s ease;
+      z-index: 50;
+    }
+
+    .sidebar.collapsed {
+      width: 0;
+      transform: translateX(-280px);
+    }
+
+    .sidebar-header {
+      padding: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .new-chat-btn {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: linear-gradient(90deg, #8b5cf6, #06b6d4);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .new-chat-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+    }
+
+    .conversation-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+
+    .conversation-item {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      transition: background 0.2s;
+      margin-bottom: 0.25rem;
+    }
+
+    .conversation-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .conversation-item.active {
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .conversation-info {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .conversation-title {
+      font-size: 0.9rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #e4e4e7;
+    }
+
+    .conversation-meta {
+      font-size: 0.75rem;
+      color: #71717a;
+      margin-top: 0.25rem;
+    }
+
+    .delete-conversation-btn {
+      background: transparent;
+      border: none;
+      color: #71717a;
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.2s, color 0.2s, background 0.2s;
+    }
+
+    .conversation-item:hover .delete-conversation-btn {
+      opacity: 1;
+    }
+
+    .delete-conversation-btn:hover {
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .sidebar-toggle {
+      position: fixed;
+      left: 280px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 48px;
+      background: rgba(139, 92, 246, 0.3);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      border-left: none;
+      border-radius: 0 8px 8px 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #e4e4e7;
+      transition: left 0.3s ease, background 0.2s;
+      z-index: 51;
+    }
+
+    .sidebar-toggle:hover {
+      background: rgba(139, 92, 246, 0.5);
+    }
+
+    .sidebar.collapsed + .sidebar-toggle {
+      left: 0;
+    }
+
+    .sidebar-toggle svg {
+      width: 16px;
+      height: 16px;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar.collapsed + .sidebar-toggle svg {
+      transform: rotate(180deg);
+    }
+
+    /* Scrollbar for conversation list */
+    .conversation-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .conversation-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .conversation-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    .conversation-list::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .no-conversations {
+      padding: 2rem 1rem;
+      text-align: center;
+      color: #71717a;
+      font-size: 0.85rem;
     }
 
     .header {
@@ -320,6 +504,13 @@
       box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
     }
 
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
     .chat-container {
       flex: 1;
       display: flex;
@@ -328,6 +519,7 @@
       width: 100%;
       margin: 0 auto;
       padding: 1rem;
+      overflow: hidden;
     }
 
     .messages {
@@ -519,10 +711,12 @@
 
     .footer {
       text-align: center;
-      padding: 1rem;
+      padding: 0.75rem 1rem;
       font-size: 0.85rem;
       color: #71717a;
       border-top: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(26, 26, 46, 0.95);
+      flex-shrink: 0;
     }
 
     .footer a {
@@ -563,6 +757,48 @@
     }
 
     /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 200;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+      }
+
+      .sidebar.collapsed {
+        transform: translateX(-100%);
+      }
+
+      .sidebar-toggle {
+        position: fixed;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 201;
+      }
+
+      .sidebar:not(.collapsed) + .sidebar-toggle {
+        left: 280px;
+      }
+
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 199;
+      }
+
+      .sidebar-overlay.active {
+        display: block;
+      }
+    }
+
     @media (max-width: 640px) {
       .header {
         padding: 0.75rem 1rem;
@@ -673,23 +909,53 @@
     <button class="tos-btn" id="acceptTos">I Accept</button>
   </div>
 
-  <div class="chat-container">
-    <div class="messages" id="messages">
-      <div class="welcome-message" id="welcomeMessage">
-        <h2>Welcome!</h2>
-        <p>This is a free community API proxy for Venice.ai.</p>
-        <p>Accept the Terms of Service above to start chatting.</p>
+  <div class="main-container">
+    <!-- Sidebar for conversation history -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <button class="new-chat-btn" id="newChatBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          New Chat
+        </button>
+      </div>
+      <div class="conversation-list" id="conversationList">
+        <div class="no-conversations">No conversations yet</div>
       </div>
     </div>
 
-    <div class="input-area">
-      <div class="input-wrapper">
-        <textarea id="userInput" placeholder="Type your message..." rows="1" disabled></textarea>
-        <button class="send-btn" id="sendBtn" disabled>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9L22 2"></path>
-          </svg>
-        </button>
+    <!-- Sidebar toggle button -->
+    <button class="sidebar-toggle" id="sidebarToggle">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+
+    <!-- Overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Chat area -->
+    <div class="chat-area">
+      <div class="chat-container">
+        <div class="messages" id="messages">
+          <div class="welcome-message" id="welcomeMessage">
+            <h2>Welcome!</h2>
+            <p>This is a free community API proxy for Venice.ai.</p>
+            <p>Accept the Terms of Service above to start chatting.</p>
+          </div>
+        </div>
+
+        <div class="input-area">
+          <div class="input-wrapper">
+            <textarea id="userInput" placeholder="Type your message..." rows="1" disabled></textarea>
+            <button class="send-btn" id="sendBtn" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9L22 2"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -702,12 +968,24 @@
   <script>
     // State
     let tosAccepted = localStorage.getItem('tosAccepted') === 'true';
-    let chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
     let isLoading = false;
     let modelCapabilities = {};
     let webSearchEnabled = localStorage.getItem('webSearchEnabled') !== 'false';
     let searchResults = {};
     let citationDocuments = {};
+    let sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+
+    // Conversation management state
+    let conversations = {};
+    let currentConversationId = null;
+
+    // Helper to get current conversation's messages (for backward compat)
+    function getChatHistory() {
+      if (!currentConversationId || !conversations[currentConversationId]) {
+        return [];
+      }
+      return conversations[currentConversationId].messages || [];
+    }
 
     // DOM Elements
     const tosBanner = document.getElementById('tosBanner');
@@ -720,13 +998,314 @@
     const modelSelect = document.getElementById('modelSelect');
     const webSearchToggle = document.getElementById('webSearchToggle');
     const remainingDisplay = document.getElementById('remaining');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const newChatBtn = document.getElementById('newChatBtn');
+    const conversationList = document.getElementById('conversationList');
+
+    // Generate unique conversation ID
+    function generateConversationId() {
+      return 'conv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // Generate title from first user message
+    function generateTitle(messages) {
+      const firstUserMessage = messages.find(m => m.role === 'user');
+      if (firstUserMessage) {
+        const title = firstUserMessage.content.trim();
+        // Truncate to 50 chars
+        return title.length > 50 ? title.substring(0, 47) + '...' : title;
+      }
+      return 'New Chat';
+    }
+
+    // Format date for display
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diff = now - date;
+      
+      // Less than 24 hours
+      if (diff < 86400000) {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+      // Less than 7 days
+      if (diff < 604800000) {
+        return date.toLocaleDateString([], { weekday: 'short' });
+      }
+      // Default
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+
+    // Load conversations from localStorage
+    function loadConversations() {
+      const saved = localStorage.getItem('conversations');
+      const savedCurrentId = localStorage.getItem('currentConversationId');
+      
+      if (saved) {
+        try {
+          conversations = JSON.parse(saved);
+        } catch (e) {
+          console.error('Failed to parse conversations:', e);
+          conversations = {};
+        }
+      }
+      
+      // Migrate old chatHistory format if exists
+      const oldChatHistory = localStorage.getItem('chatHistory');
+      if (oldChatHistory && Object.keys(conversations).length === 0) {
+        try {
+          const messages = JSON.parse(oldChatHistory);
+          if (messages.length > 0) {
+            const newId = generateConversationId();
+            conversations[newId] = {
+              id: newId,
+              title: generateTitle(messages),
+              messages: messages,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              model: localStorage.getItem('selectedModel') || 'llama-3.3-70b'
+            };
+            currentConversationId = newId;
+            saveConversations();
+            // Clear old format
+            localStorage.removeItem('chatHistory');
+          }
+        } catch (e) {
+          console.error('Failed to migrate old chat history:', e);
+        }
+      }
+      
+      // Restore current conversation
+      if (savedCurrentId && conversations[savedCurrentId]) {
+        currentConversationId = savedCurrentId;
+      } else if (Object.keys(conversations).length > 0) {
+        // Select most recent conversation
+        const sorted = Object.values(conversations).sort((a, b) => 
+          new Date(b.updatedAt) - new Date(a.updatedAt)
+        );
+        currentConversationId = sorted[0].id;
+      }
+      
+      renderConversationList();
+    }
+
+    // Save conversations to localStorage
+    function saveConversations() {
+      localStorage.setItem('conversations', JSON.stringify(conversations));
+      if (currentConversationId) {
+        localStorage.setItem('currentConversationId', currentConversationId);
+      }
+    }
+
+    // Create a new conversation
+    function createConversation() {
+      const newId = generateConversationId();
+      conversations[newId] = {
+        id: newId,
+        title: 'New Chat',
+        messages: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        model: modelSelect.value || 'llama-3.3-70b'
+      };
+      
+      currentConversationId = newId;
+      saveConversations();
+      renderConversationList();
+      displayCurrentConversation();
+      
+      // Close sidebar on mobile after creating new chat
+      if (window.innerWidth <= 768) {
+        collapseSidebar();
+      }
+      
+      userInput.focus();
+    }
+
+    // Switch to a different conversation
+    function switchConversation(conversationId) {
+      if (!conversations[conversationId]) {
+        console.error('Conversation not found:', conversationId);
+        return;
+      }
+      
+      currentConversationId = conversationId;
+      saveConversations();
+      renderConversationList();
+      displayCurrentConversation();
+      
+      // Close sidebar on mobile after switching
+      if (window.innerWidth <= 768) {
+        collapseSidebar();
+      }
+    }
+
+    // Delete a conversation
+    function deleteConversation(conversationId, event) {
+      event.stopPropagation();
+      
+      if (!confirm('Delete this conversation?')) {
+        return;
+      }
+      
+      delete conversations[conversationId];
+      
+      // If we deleted the current conversation, switch to another or create new
+      if (currentConversationId === conversationId) {
+        const remaining = Object.values(conversations).sort((a, b) => 
+          new Date(b.updatedAt) - new Date(a.updatedAt)
+        );
+        
+        if (remaining.length > 0) {
+          currentConversationId = remaining[0].id;
+        } else {
+          currentConversationId = null;
+        }
+      }
+      
+      saveConversations();
+      renderConversationList();
+      displayCurrentConversation();
+    }
+
+    // Render the conversation list in sidebar
+    function renderConversationList() {
+      const convArray = Object.values(conversations).sort((a, b) => 
+        new Date(b.updatedAt) - new Date(a.updatedAt)
+      );
+      
+      if (convArray.length === 0) {
+        conversationList.innerHTML = '<div class="no-conversations">No conversations yet</div>';
+        return;
+      }
+      
+      conversationList.innerHTML = convArray.map(conv => `
+        <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}" 
+             data-conversation-id="${conv.id}"
+             onclick="switchConversation('${conv.id}')">
+          <div class="conversation-info">
+            <div class="conversation-title">${escapeHtml(conv.title)}</div>
+            <div class="conversation-meta">${formatDate(conv.updatedAt)}</div>
+          </div>
+          <button class="delete-conversation-btn" onclick="deleteConversation('${conv.id}', event)" title="Delete conversation">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    // Display the current conversation in the chat area
+    function displayCurrentConversation() {
+      messagesContainer.innerHTML = '';
+      
+      if (!currentConversationId || !conversations[currentConversationId]) {
+        // Show welcome message for new/empty state
+        const welcomeDiv = document.createElement('div');
+        welcomeDiv.className = 'welcome-message';
+        welcomeDiv.id = 'welcomeMessage';
+        welcomeDiv.innerHTML = `
+          <h2>Ready to chat!</h2>
+          <p>Type a message below to start your conversation.</p>
+        `;
+        messagesContainer.appendChild(welcomeDiv);
+        return;
+      }
+      
+      const conversation = conversations[currentConversationId];
+      const messages = conversation.messages || [];
+      
+      if (messages.length === 0) {
+        const welcomeDiv = document.createElement('div');
+        welcomeDiv.className = 'welcome-message';
+        welcomeDiv.id = 'welcomeMessage';
+        welcomeDiv.innerHTML = `
+          <h2>Ready to chat!</h2>
+          <p>Type a message below to start your conversation.</p>
+        `;
+        messagesContainer.appendChild(welcomeDiv);
+        return;
+      }
+      
+      // Display all messages
+      messages.forEach(msg => {
+        if (msg.citations && typeof msg.citations === 'object' && Object.keys(msg.citations).length > 0) {
+          // Validate citations before using them
+          const validCitations = {};
+          Object.entries(msg.citations).forEach(([id, citation]) => {
+            if (citation && typeof citation === 'object' && citation.id) {
+              validCitations[id] = citation;
+            }
+          });
+          
+          citationDocuments = validCitations;
+          appendMessage(msg.role, msg.content, false);
+          
+          if (msg.role === 'assistant' && Object.keys(citationDocuments).length > 0) {
+            const allMessages = document.querySelectorAll('.message.assistant');
+            const lastMessage = allMessages[allMessages.length - 1];
+            if (lastMessage) {
+              const contentDiv = lastMessage.querySelector('.message-content');
+              if (contentDiv) {
+                addCitationsSection(contentDiv);
+              }
+            }
+          }
+          citationDocuments = {};
+        } else {
+          appendMessage(msg.role, msg.content, false);
+        }
+      });
+      
+      scrollToBottom();
+    }
+
+    // Sidebar toggle functions
+    function toggleSidebar() {
+      sidebarCollapsed = !sidebarCollapsed;
+      updateSidebarState();
+      localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+    }
+
+    function collapseSidebar() {
+      sidebarCollapsed = true;
+      updateSidebarState();
+      localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+    }
+
+    function expandSidebar() {
+      sidebarCollapsed = false;
+      updateSidebarState();
+      localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+    }
+
+    function updateSidebarState() {
+      if (sidebarCollapsed) {
+        sidebar.classList.add('collapsed');
+        sidebarOverlay.classList.remove('active');
+      } else {
+        sidebar.classList.remove('collapsed');
+        if (window.innerWidth <= 768) {
+          sidebarOverlay.classList.add('active');
+        }
+      }
+    }
 
     // Initialize
     function init() {
+      // Initialize sidebar state
+      updateSidebarState();
+      
+      // Load conversations
+      loadConversations();
+      
       if (tosAccepted) {
         tosBanner.classList.add('hidden');
         enableInput();
-        loadChatHistory();
+        displayCurrentConversation();
       }
 
       // Fetch available models
@@ -742,10 +1321,24 @@
       modelSelect.addEventListener('change', onModelChange);
       webSearchToggle.addEventListener('change', onWebSearchToggle);
       
+      // Sidebar event listeners
+      sidebarToggle.addEventListener('click', toggleSidebar);
+      sidebarOverlay.addEventListener('click', collapseSidebar);
+      newChatBtn.addEventListener('click', createConversation);
+      
       userInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           sendMessage();
+        }
+      });
+      
+      // Handle window resize
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+          sidebarOverlay.classList.remove('active');
+        } else if (!sidebarCollapsed) {
+          sidebarOverlay.classList.add('active');
         }
       });
     }
@@ -868,13 +1461,7 @@
       localStorage.setItem('tosAccepted', 'true');
       tosBanner.classList.add('hidden');
       enableInput();
-      
-      if (chatHistory.length === 0) {
-        welcomeMessage.innerHTML = `
-          <h2>Ready to chat!</h2>
-          <p>Type a message below to start your conversation.</p>
-        `;
-      }
+      displayCurrentConversation();
     }
 
     function enableInput() {
@@ -902,61 +1489,36 @@
       localStorage.setItem('webSearchEnabled', webSearchEnabled);
     }
 
-    function loadChatHistory() {
-      if (chatHistory.length > 0) {
-        welcomeMessage.style.display = 'none';
-        chatHistory.forEach(msg => {
-          if (msg.citations && typeof msg.citations === 'object' && Object.keys(msg.citations).length > 0) {
-            // Validate citations before using them
-            const validCitations = {};
-            Object.entries(msg.citations).forEach(([id, citation]) => {
-              if (citation && typeof citation === 'object' && citation.id) {
-                validCitations[id] = citation;
-              } else {
-                console.warn('Invalid citation in chat history:', id, citation);
-              }
-            });
-            
-            citationDocuments = validCitations;
-            appendMessage(msg.role, msg.content, false);
-            
-            if (msg.role === 'assistant' && Object.keys(citationDocuments).length > 0) {
-              const messages = document.querySelectorAll('.message.assistant');
-              const lastMessage = messages[messages.length - 1];
-              if (lastMessage) {
-                const contentDiv = lastMessage.querySelector('.message-content');
-                if (contentDiv) {
-                  addCitationsSection(contentDiv);
-                }
-              }
-            }
-            citationDocuments = {};
-          } else {
-            appendMessage(msg.role, msg.content, false);
-          }
-        });
-        scrollToBottom();
+    // saveChatHistory now saves to current conversation
+    function saveChatHistory() {
+      if (currentConversationId && conversations[currentConversationId]) {
+        conversations[currentConversationId].updatedAt = new Date().toISOString();
+        saveConversations();
+        renderConversationList();
       }
     }
 
-    function saveChatHistory() {
-      localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-    }
-
     function clearChat() {
-      chatHistory = [];
-      saveChatHistory();
-      messagesContainer.innerHTML = '';
-      welcomeMessage.style.display = 'block';
-      welcomeMessage.innerHTML = `
-        <h2>Chat cleared!</h2>
-        <p>Start a new conversation below.</p>
-      `;
-      messagesContainer.appendChild(welcomeMessage);
+      if (!currentConversationId || !conversations[currentConversationId]) {
+        return;
+      }
+      
+      // Clear the current conversation's messages
+      conversations[currentConversationId].messages = [];
+      conversations[currentConversationId].title = 'New Chat';
+      conversations[currentConversationId].updatedAt = new Date().toISOString();
+      
+      saveConversations();
+      renderConversationList();
+      displayCurrentConversation();
     }
 
     function appendMessage(role, content, save = true) {
-      welcomeMessage.style.display = 'none';
+      // Hide welcome message if present
+      const welcomeMsg = document.getElementById('welcomeMessage');
+      if (welcomeMsg) {
+        welcomeMsg.style.display = 'none';
+      }
       
       const messageDiv = document.createElement('div');
       messageDiv.className = `message ${role}`;
@@ -973,8 +1535,19 @@
       messageDiv.appendChild(contentDiv);
       messagesContainer.appendChild(messageDiv);
       
-      if (save) {
-        chatHistory.push({ role, content });
+      if (save && currentConversationId && conversations[currentConversationId]) {
+        // Create conversation if needed
+        if (!currentConversationId) {
+          createConversation();
+        }
+        
+        conversations[currentConversationId].messages.push({ role, content });
+        
+        // Update title from first user message
+        if (role === 'user' && conversations[currentConversationId].title === 'New Chat') {
+          conversations[currentConversationId].title = generateTitle(conversations[currentConversationId].messages);
+        }
+        
         saveChatHistory();
       }
       
@@ -1165,7 +1738,12 @@
       const message = userInput.value.trim();
       if (!message || isLoading || !tosAccepted) return;
 
-isLoading = true;
+      // Create a new conversation if none exists
+      if (!currentConversationId) {
+        createConversation();
+      }
+
+      isLoading = true;
       // Show typing indicator immediately
       showTypingIndicator();
       // Force reflow to ensure immediate visibility
@@ -1176,6 +1754,9 @@ isLoading = true;
       appendMessage('user', message);
       userInput.value = '';
       userInput.style.height = 'auto';
+
+      // Get current conversation's messages for API call
+      const chatHistory = getChatHistory();
 
       try {
         const response = await fetch('/api/chat', {
@@ -1353,8 +1934,8 @@ isLoading = true;
         }
 
         // Save assistant message
-        if (fullContent) {
-          chatHistory.push({
+        if (fullContent && currentConversationId && conversations[currentConversationId]) {
+          conversations[currentConversationId].messages.push({
             role: 'assistant',
             content: fullContent,
             citations: { ...citationDocuments }
@@ -1370,8 +1951,10 @@ isLoading = true;
         showError(error.message);
         
         // Remove the user message from history if request failed
-        chatHistory.pop();
-        saveChatHistory();
+        if (currentConversationId && conversations[currentConversationId]) {
+          conversations[currentConversationId].messages.pop();
+          saveChatHistory();
+        }
       } finally {
         // Ensure spinner is always removed
         removeTypingIndicator();
