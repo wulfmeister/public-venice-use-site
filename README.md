@@ -1,18 +1,58 @@
-# 🎁 Venice AI Community Proxy
+# Venice AI Community Proxy
 
-A free, public API proxy for Venice.ai with a built-in web chat interface.
+A free, privacy-focused API proxy for Venice.ai with a built-in web chat interface.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Vercel-black.svg)
 
 ## Features
 
-- 🤖 **Multiple AI Models** - Access Llama 3.3 70B, DeepSeek R1, and Dolphin Qwen2
-- 💬 **Built-in Chat UI** - Beautiful dark-themed chat interface
-- 🔄 **Streaming Responses** - See AI responses as they generate
-- 💾 **Chat History** - Conversations persist in your browser
-- 🛡️ **Rate Limiting** - 20 requests per hour per IP
-- 📜 **Terms of Service** - Built-in ToS acceptance flow
+- **Privacy-First Architecture** - Zero conversation logging; your chats stay in your browser
+- **Multiple AI Models** - Access Venice Uncensored, Llama 3.3 70B, DeepSeek R1, and more (dynamically loaded)
+- **Multi-Chat Management** - Create, rename, and organize multiple conversations
+- **Private Web Search** - AI can search the web without tracking (via Venice.ai)
+- **Light/Dark Theme** - Toggle between light cream and dark modes
+- **Streaming Responses** - See AI responses as they generate
+- **Local Storage Only** - Conversations persist only in your browser's localStorage
+- **Rate Limiting** - 20 requests per hour per IP
+- **Terms of Service** - Built-in ToS acceptance flow
+
+## Privacy Architecture
+
+This proxy is designed to maximize user privacy. Here's how data flows:
+
+```
+┌─────────────┐    HTTPS/TLS    ┌─────────────┐    HTTPS/TLS    ┌─────────────┐
+│   Browser   │ ───────────────▶│   Vercel    │ ───────────────▶│  Venice.ai  │
+│             │◀─────────────── │ Edge Proxy  │◀─────────────── │     API     │
+└─────────────┘   (encrypted)   └─────────────┘   (encrypted)   └─────────────┘
+      │                                │                               │
+      │                                │                               │
+      ▼                                ▼                               ▼
+ localStorage               No content logging              No storage of
+ (conversations)            (only IP for rate limit)        prompts/responses
+```
+
+### What Gets Logged
+
+| Data | Logged? | Where | Duration |
+|------|---------|-------|----------|
+| Prompts/Messages | No | - | - |
+| AI Responses | No | - | - |
+| Conversation History | No | Browser only | Until cleared |
+| IP Addresses | Yes | In-memory | Until cold start |
+| Model Selection | Yes | In-memory | Per request |
+| Error Details | Yes | Vercel logs | Standard retention |
+
+### Privacy Guarantees
+
+1. **This Proxy**: Does not log, store, or have access to conversation content. Request bodies are parsed, validated, and forwarded without persistence.
+
+2. **Venice.ai**: Does not store prompts or model responses on their servers. Conversations exist only in your browser's localStorage. See [Venice.ai Privacy Architecture](https://venice.ai/privacy).
+
+3. **Vercel**: Provides hosting infrastructure with TLS 1.2/1.3 encryption. Does not log request/response bodies by default. See [Vercel Security Docs](https://vercel.com/docs/security).
+
+4. **Encryption**: All traffic is encrypted end-to-end using TLS. Vercel enforces HTTPS and does not allow unencrypted connections.
 
 ## Quick Start
 
@@ -76,10 +116,10 @@ Visit `http://localhost:3000` to see the chat interface.
 ```
 venice-community-proxy/
 ├── api/
-│   ├── chat.js          # POST /api/chat - main proxy endpoint
-│   └── info.js          # GET /api/info - returns available models
+│   ├── chat.js          # POST /api/chat - main proxy endpoint (Edge Runtime)
+│   └── info.js          # GET /api/info - returns available models + capabilities
 ├── public/
-│   ├── index.html       # Chat UI
+│   ├── index.html       # Chat UI (single-page app with multi-chat, themes)
 │   └── tos.html         # Terms of Service
 ├── package.json
 ├── vercel.json          # Vercel configuration
@@ -96,9 +136,10 @@ curl https://your-domain.vercel.app/api/chat \
   -H "Content-Type: application/json" \
   -H "X-TOS-Accepted: true" \
   -d '{
-    "model": "llama-3.3-70b",
+    "model": "venice-uncensored",
     "messages": [{"role": "user", "content": "Hello!"}],
-    "stream": true
+    "stream": true,
+    "enable_web_search": "auto"
   }'
 ```
 
@@ -108,10 +149,19 @@ curl https://your-domain.vercel.app/api/chat \
 curl https://your-domain.vercel.app/api/info
 ```
 
+Returns available models and their capabilities (web search, vision, reasoning, etc.).
+
 ### Available Models
+
+Models are dynamically loaded from Venice.ai's API and filtered by cost thresholds:
+- Max input price: $2.00 per 1M tokens
+- Max output price: $6.00 per 1M tokens
+
+Common models include:
 
 | Model | Description |
 |-------|-------------|
+| `venice-uncensored` | Venice's uncensored model (default) |
 | `llama-3.3-70b` | Meta's Llama 3.3 70B parameter model |
 | `deepseek-r1-distill-llama-70b` | DeepSeek R1 distilled to Llama 70B |
 | `dolphin-2.9.2-qwen2-72b` | Dolphin fine-tuned Qwen2 72B |
@@ -125,6 +175,7 @@ curl https://your-domain.vercel.app/api/info
 | `stream` | boolean | `true` | Enable streaming responses |
 | `max_tokens` | number | `2048` | Maximum tokens (max 4096) |
 | `temperature` | number | `0.7` | Sampling temperature |
+| `enable_web_search` | string | `"auto"` | `"auto"`, `"on"`, or `"off"` |
 
 ### Required Headers
 
@@ -145,6 +196,7 @@ curl https://your-domain.vercel.app/api/info
 - **20 requests per hour** per IP address
 - Rate limit resets on a rolling window
 - Exceeding the limit returns HTTP 429
+- Rate limit data is stored in-memory and resets on cold starts
 
 ## Environment Variables
 
@@ -158,6 +210,24 @@ curl https://your-domain.vercel.app/api/info
 2. Create an account or sign in
 3. Navigate to API settings
 4. Generate a new API key
+
+## Architecture Notes
+
+### Edge Runtime
+
+The chat endpoint runs on Vercel's Edge Runtime (`runtime: 'edge'`), which provides:
+- Low latency globally
+- Streaming support
+- No cold start delays
+- Stateless execution (rate limits reset on new instances)
+
+### Streaming
+
+Responses are streamed directly from Venice.ai to the browser. The proxy pipes the response body through without buffering, enabling real-time token display.
+
+### Model Filtering
+
+Models are filtered by cost on first request and cached in memory. This ensures users can only access reasonably-priced models while keeping the list dynamic as Venice adds new models.
 
 ## License
 
