@@ -1001,6 +1001,73 @@
       margin-bottom: 0;
     }
 
+    .message-content table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1rem 0;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .message-content th {
+      background: var(--button-bg);
+      font-weight: 700;
+      padding: 0.75rem 1rem;
+      text-align: left;
+      color: var(--text-primary);
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .message-content th.text-left {
+      text-align: left;
+    }
+
+    .message-content th.text-center {
+      text-align: center;
+    }
+
+    .message-content th.text-right {
+      text-align: right;
+    }
+
+    .message-content td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-primary);
+      vertical-align: top;
+    }
+
+    .message-content tr:last-child td {
+      border-bottom: none;
+    }
+
+    .message-content tbody tr:nth-child(even) {
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    .message-content tbody tr:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .message-content .table-wrapper {
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+
+    .message-content td.text-left {
+      text-align: left;
+    }
+
+    .message-content td.text-center {
+      text-align: center;
+    }
+
+    .message-content td.text-right {
+      text-align: right;
+    }
+
     .typing-indicator {
       display: flex;
       gap: 4px;
@@ -2357,6 +2424,73 @@
       return contentDiv;
     }
 
+    function formatTables(content) {
+      // Match table blocks: lines starting and ending with |, with separator row
+      const tableRegex = /((?:^\|[^\n]+\|\n)+)(?:\|[-:]+\|)\n((?:^\|[^\n]+\|\n)+)/gm;
+      return content.replace(tableRegex, (match, headerSection, separatorRow, bodySection) => {
+        // Extract header row
+        const headerLine = headerSection.trim();
+        const headers = parseTableRow(headerLine);
+
+        // Parse separator row for alignment
+        const alignments = parseAlignment(separatorRow);
+
+        // Extract and parse body rows
+        const bodyLines = bodySection.trim().split('\n');
+        const rows = bodyLines.map(line => parseTableRow(line));
+
+        // Build table HTML
+        let tableHtml = '<div class="table-wrapper"><table>';
+
+        // Add header
+        tableHtml += '<thead><tr>';
+        headers.forEach((header, i) => {
+          const alignClass = alignments[i] || 'text-left';
+          tableHtml += `<th class="${alignClass}">${header || ''}</th>`;
+        });
+        tableHtml += '</tr></thead>';
+
+        // Add body
+        tableHtml += '<tbody>';
+        rows.forEach(row => {
+          tableHtml += '<tr>';
+          row.forEach((cell, i) => {
+            const alignClass = alignments[i] || 'text-left';
+            tableHtml += `<td class="${alignClass}">${cell || ''}</td>`;
+          });
+          tableHtml += '</tr>';
+        });
+        tableHtml += '</tbody>';
+
+        tableHtml += '</table></div>';
+        return tableHtml;
+      });
+    }
+
+    function parseTableRow(line) {
+      // Remove leading/trailing | and split by |
+      const cells = line.replace(/^\||\|$/g, '').split('|');
+      // Trim each cell and handle empty cells
+      return cells.map(cell => cell.trim());
+    }
+
+    function parseAlignment(separatorRow) {
+      // Parse alignment from separator row
+      const cells = separatorRow.replace(/^\||\|$/g, '').split('|');
+      return cells.map(cell => {
+        const trimmed = cell.trim();
+        if (trimmed.startsWith(':') && trimmed.endsWith(':')) {
+          return 'text-center';
+        } else if (trimmed.endsWith(':')) {
+          return 'text-right';
+        } else if (trimmed.startsWith(':')) {
+          return 'text-left';
+        } else {
+          return 'text-left';
+        }
+      });
+    }
+
     function formatMessage(content) {
       // Get ordered list of citation IDs for proper indexing
       const citationIds = Object.keys(citationDocuments);
@@ -2410,8 +2544,11 @@ if (!citation) {
              
              const title = citation?.metadata?.title || `Source ${displayNum}`;
              return `<a href="${href}" class="citation-link" data-citation="${citationId}" data-citation-num="${displayNum}" title="${escapeHtml(title)}" target="_blank">[${displayNum}]</a>`;
-          }).join('');
+           }).join('');
         })
+
+        // Table parsing - process before other markdown to allow nested formatting in cells
+        formatted = formatTables(formatted);
         // Code blocks
         .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
         // Inline code
