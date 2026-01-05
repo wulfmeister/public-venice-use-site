@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Free Venice AI Chat</title>
+  <title>OpenChat</title>
   <style>
     /* Force title to use system font */
     title {
@@ -343,19 +343,50 @@
       gap: 1rem;
       border-bottom: 2px solid var(--glass-border);
       transition: all 0.3s ease;
+      position: relative;
     }
 
-    .header h1 {
+    .header h1.chat-bubble {
       font-family: var(--font-ui);
-      font-size: 1.5rem;
-      font-weight: 600;
+      font-size: 1.4rem;
+      font-weight: 700;
       letter-spacing: -0.01em;
       line-height: 1.2;
+      margin: 0;
+      padding: 0.75rem 1.25rem;
+      background: var(--glass-bg);
+      border: 2px solid var(--glass-border);
+      border-radius: 20px;
+      position: relative;
+      color: var(--text-primary);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s ease;
     }
 
-    .header h1 span {
-      color: var(--border-color);
-      font-weight: 700;
+    .header h1.chat-bubble::before {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 20px;
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid var(--glass-border);
+    }
+
+    .header h1.chat-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 21px;
+      width: 0;
+      height: 0;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-top: 7px solid var(--glass-bg);
     }
 
     .header-controls {
@@ -363,6 +394,64 @@
       align-items: center;
       gap: 1rem;
       flex-wrap: wrap;
+    }
+
+    .settings-btn {
+      display: none;
+      background: var(--glass-bg);
+      border: 2px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 0.75rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--text-primary);
+      width: 48px;
+      height: 48px;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .settings-btn:hover {
+      background: var(--glass-hover);
+      transform: scale(1.05);
+    }
+
+    .settings-btn svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--text-primary);
+    }
+
+    .settings-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 2px solid var(--glass-border);
+      transition: max-height 0.3s ease;
+      z-index: 99;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      max-height: 0;
+      overflow: hidden;
+    }
+
+    .settings-dropdown.active {
+      max-height: 500px;
+    }
+
+    .settings-content {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-width: 800px;
+      margin: 0 auto;
     }
 
     .theme-wrapper {
@@ -1123,25 +1212,37 @@
         z-index: 199;
       }
 
-      .sidebar-overlay.active {
-        display: block;
-      }
-    }
+       .sidebar-overlay.active {
+         display: block;
+       }
 
-    @media (max-width: 640px) {
-      .header {
-        padding: 0.75rem 1rem;
-        flex-wrap: wrap;
-        align-items: flex-start;
-      }
+       /* Mobile settings dropdown */
+       .settings-btn {
+         display: flex;
+       }
 
-      .header h1 {
-        font-size: 1.2rem;
-        width: 100%;
-        text-align: center;
-        order: 0;
-        margin-bottom: 0.5rem;
-      }
+       .header-controls {
+         display: none;
+       }
+
+       /* Prevent header from wrapping on mobile */
+       .header {
+         flex-wrap: nowrap;
+       }
+     }
+
+     @media (max-width: 640px) {
+       .header {
+         padding: 0.75rem 1rem;
+         flex-wrap: nowrap;
+         align-items: flex-start;
+       }
+
+       .header h1 {
+         font-size: 1.2rem;
+         order: 0;
+         margin-bottom: 0;
+       }
 
       .header-controls {
         width: 100%;
@@ -1323,7 +1424,13 @@
 </head>
 <body>
   <div class="header">
-    <h1>🎁 Free <span>Venice AI</span> Chat</h1>
+    <h1 class="chat-bubble">💬 OpenChat</h1>
+    <button class="settings-btn" id="settingsBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
     <div class="header-controls">
       <div class="model-selector-wrapper">
         <span class="model-label">Model:</span>
@@ -1372,12 +1479,65 @@
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
             </svg>
           </span>
-        </label>
+         </label>
+       </div>
+     </div>
+    <div class="settings-dropdown" id="settingsDropdown">
+      <div class="settings-content">
+        <div class="model-selector-wrapper">
+          <span class="model-label">Model:</span>
+          <select class="model-select" id="modelSelectMobile">
+            <option value="">Loading models...</option>
+          </select>
+        </div>
+        <div class="web-search-wrapper">
+          <span class="web-search-label">Private Web Search:</span>
+          <label class="web-search-toggle">
+            <input type="checkbox" id="webSearchToggleMobile">
+            <span class="web-search-slider">
+              <svg class="web-on-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+              <svg class="web-off-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </span>
+          </label>
+        </div>
+        <div class="rate-limit">
+          <strong id="remainingMobile">20</strong>/20 requests
+        </div>
+        <a href="/tos.html" class="terms-link" target="_blank">Terms</a>
+        <button class="clear-btn" id="clearBtnMobile">Clear Chat</button>
+        <div class="theme-wrapper">
+          <label class="theme-toggle">
+            <input type="checkbox" id="themeToggleMobile">
+            <span class="theme-slider">
+              <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+              <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+            </span>
+          </label>
+        </div>
       </div>
     </div>
-  </div>
+    </div>
 
-  <div class="tos-banner" id="tosBanner">
+    <div class="tos-banner" id="tosBanner">
     <p>⚠️ By using this service, you agree to our <a href="/tos.html">Terms of Service</a>. 
        You are responsible for all content you generate.</p>
     <button class="tos-btn" id="acceptTos">I Accept</button>
@@ -1482,6 +1642,8 @@
     const conversationList = document.getElementById('conversationList');
     const themeToggle = document.getElementById('themeToggle');
     const chatArea = document.querySelector('.chat-area');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsDropdown = document.getElementById('settingsDropdown');
 
     // Generate unique conversation ID
     function generateConversationId() {
@@ -1855,16 +2017,74 @@
       setTheme(currentTheme);
     }
 
+    // Settings dropdown toggle
+    function toggleSettingsDropdown() {
+      settingsDropdown.classList.toggle('active');
+    }
 
+    // Close settings dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!settingsBtn.contains(e.target) && !settingsDropdown.contains(e.target)) {
+        settingsDropdown.classList.remove('active');
+      }
+    });
+
+    // Sync mobile controls with desktop controls
+    function syncMobileControls() {
+      const mobileModelSelect = document.getElementById('modelSelectMobile');
+      const mobileWebSearchToggle = document.getElementById('webSearchToggleMobile');
+      const mobileThemeToggle = document.getElementById('themeToggleMobile');
+      const mobileClearBtn = document.getElementById('clearBtnMobile');
+      const mobileRemaining = document.getElementById('remainingMobile');
+
+      if (mobileModelSelect && modelSelect) {
+        mobileModelSelect.innerHTML = modelSelect.innerHTML;
+        mobileModelSelect.value = modelSelect.value;
+        mobileModelSelect.addEventListener('change', () => {
+          modelSelect.value = mobileModelSelect.value;
+          onModelChange();
+        });
+      }
+
+      if (mobileWebSearchToggle && webSearchToggle) {
+        mobileWebSearchToggle.checked = webSearchToggle.checked;
+        mobileWebSearchToggle.addEventListener('change', () => {
+          webSearchToggle.checked = mobileWebSearchToggle.checked;
+          onWebSearchToggle();
+        });
+      }
+
+      if (mobileThemeToggle && themeToggle) {
+        mobileThemeToggle.checked = themeToggle.checked;
+        mobileThemeToggle.addEventListener('change', () => {
+          themeToggle.checked = mobileThemeToggle.checked;
+          toggleTheme();
+        });
+      }
+
+      if (mobileClearBtn && clearBtn) {
+        mobileClearBtn.addEventListener('click', () => {
+          clearBtn.click();
+          settingsDropdown.classList.remove('active'); // Close dropdown after action
+        });
+      }
+
+      if (mobileRemaining && remainingDisplay) {
+        mobileRemaining.textContent = remainingDisplay.textContent;
+      }
+    }
 
     // Initialize
     function init() {
       // Initialize theme
       initTheme();
-      
+
       // Initialize sidebar state
       updateSidebarState();
-      
+
+      // Sync mobile controls
+      syncMobileControls();
+
       // Load conversations
       loadConversations();
       
@@ -1892,10 +2112,13 @@
       sidebarOverlay.addEventListener('click', collapseSidebar);
       newChatBtn.addEventListener('click', createConversation);
       
-      // Theme event listener
-      themeToggle.addEventListener('change', toggleTheme);
-      
-      userInput.addEventListener('keydown', (e) => {
+       // Theme event listener
+       themeToggle.addEventListener('change', toggleTheme);
+
+       // Settings dropdown event listener
+       settingsBtn.addEventListener('click', toggleSettingsDropdown);
+
+       userInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           sendMessage();
@@ -1926,7 +2149,9 @@
         
         // Clear existing options
         modelSelect.innerHTML = '';
-        
+        const mobileModelSelect = document.getElementById('modelSelectMobile');
+        if (mobileModelSelect) mobileModelSelect.innerHTML = '';
+
         // Add model options
         models.forEach(modelId => {
           const option = document.createElement('option');
@@ -1934,16 +2159,24 @@
           // Create a readable name from the model ID
           option.textContent = formatModelName(modelId);
           modelSelect.appendChild(option);
+
+          // Also add to mobile select
+          if (mobileModelSelect) {
+            const mobileOption = option.cloneNode(true);
+            mobileModelSelect.appendChild(mobileOption);
+          }
         });
         
         // Set default model to venice-uncensored if available, otherwise first model
         let defaultModel = 'venice-uncensored';
         if (models.includes(defaultModel)) {
           modelSelect.value = defaultModel;
+          if (mobileModelSelect) mobileModelSelect.value = defaultModel;
           localStorage.setItem('selectedModel', defaultModel);
         } else {
           defaultModel = models[0];
           modelSelect.value = defaultModel;
+          if (mobileModelSelect) mobileModelSelect.value = defaultModel;
           localStorage.setItem('selectedModel', defaultModel);
         }
         
@@ -2317,6 +2550,10 @@ if (!citation) {
 
     function updateRateLimit(remaining) {
       remainingDisplay.textContent = remaining;
+      const mobileRemaining = document.getElementById('remainingMobile');
+      if (mobileRemaining) {
+        mobileRemaining.textContent = remaining;
+      }
     }
 
     async function sendMessage() {
