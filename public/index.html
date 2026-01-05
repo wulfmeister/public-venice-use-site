@@ -2134,33 +2134,49 @@
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        // Process citations before other formatting
-        .replace(/\[REF\](\d+(?:,\d+)*)\[\/REF\]/g, (match, numbers) => {
+// Process citations before other formatting
+        // Support both [REF]0[/REF] format (0-based) and ^1^ format (1-based)
+        .replace(/\[REF\](\d+(?:,\d+)*)\[\/REF\]|\^(\d+(?:,\d+)*)\^/g, (match, refNumbers, caretNumbers) => {
+          // Determine which format matched and get the numbers
+          const numbers = refNumbers || caretNumbers;
+          const isRefFormat = !!refNumbers; // [REF] format is 0-based, ^ format is 1-based
+          
           const citationList = numbers.split(',');
           return citationList.map(citationNum => {
             const num = parseInt(citationNum.trim());
-            if (num < 1 || num > citationIds.length) {
-              console.warn(`Invalid citation number: ${num}. Available: 1-${citationIds.length}`);
-              return `[${num}]`;
+            
+            // Handle different indexing based on format
+            let citationId, displayNum;
+            if (isRefFormat) {
+              // [REF] format: 0-based indexing
+              citationId = String(num);
+              displayNum = num + 1;
+            } else {
+              // ^ format: 1-based indexing
+              citationId = String(num - 1);
+              displayNum = num;
             }
             
-            const citationId = citationIds[num - 1]; // Convert 1-based to 0-based
+            if (displayNum < 1 || displayNum > citationIds.length) {
+              console.warn(`Invalid citation number: ${num} (${isRefFormat ? '0-based' : '1-based'}) -> ${displayNum} (display). Available: 1-${citationIds.length}`);
+              return `[${displayNum}]`;
+            }
             const citation = citationDocuments[citationId];
             
-            if (!citation) {
-              console.warn(`Citation not found for ID: ${citationId}`);
-              return `[${num}]`;
-            }
-            
-            // Validate and clean URL
-            let href = citation?.metadata?.url;
-            if (!href || !isValidUrl(href)) {
-              href = `#citation-${num}`;
-              console.warn(`Invalid or missing URL for citation ${num}:`, href);
-            }
-            
-            const title = citation?.metadata?.title || `Source ${num}`;
-            return `<a href="${href}" class="citation-link" data-citation="${citationId}" data-citation-num="${num}" title="${escapeHtml(title)}" target="_blank">[${num}]</a>`;
+if (!citation) {
+               console.warn(`Citation not found for ID: ${citationId}`);
+               return `[${displayNum}]`;
+             }
+
+             // Validate and clean URL
+             let href = citation?.metadata?.url;
+             if (!href || !isValidUrl(href)) {
+               href = `#citation-${displayNum}`;
+               console.warn(`Invalid or missing URL for citation ${displayNum}:`, href);
+             }
+             
+             const title = citation?.metadata?.title || `Source ${displayNum}`;
+             return `<a href="${href}" class="citation-link" data-citation="${citationId}" data-citation-num="${displayNum}" title="${escapeHtml(title)}" target="_blank">[${displayNum}]</a>`;
           }).join('');
         })
         // Code blocks
@@ -2288,7 +2304,7 @@
         citationsSection.appendChild(citationItem);
       });
       
-      messageDiv.appendChild(citationsSection);
+       contentDiv.appendChild(citationsSection);
       
       // Add click handling for citation links to scroll to sources
       citationsSection.querySelectorAll('.citation-source-link').forEach(link => {
@@ -2313,16 +2329,17 @@
       }
 
       isLoading = true;
-      // Show typing indicator immediately
-      showTypingIndicator();
-      // Force reflow to ensure immediate visibility
-      messagesContainer.offsetHeight;
       disableInput();
       
-      // Add user message
+      // Add user message first
       appendMessage('user', message);
       userInput.value = '';
       userInput.style.height = 'auto';
+
+      // Show typing indicator after user message
+      showTypingIndicator();
+      // Force reflow to ensure immediate visibility
+      messagesContainer.offsetHeight;
 
       // Get current conversation's messages for API call
       const chatHistory = getChatHistory();
@@ -2401,35 +2418,40 @@
                 console.log('🔍 Streaming data:', parsed.type || 'content', parsed);
 
                 // Unified citation handling with robust error handling
+                let citationsJustLoaded = false;
                 try {
                   if (parsed.venice_parameters?.web_search_citations) {
-                    console.log('🔗 Citations from venice_parameters:', parsed.venice_parameters.web_search_citations);
-                    if (Array.isArray(parsed.venice_parameters.web_search_citations)) {
-                      parsed.venice_parameters.web_search_citations.forEach((citation, index) => {
-                        if (citation && citation.id) {
-                          // Validate citation structure
-                          const validCitation = {
-                            id: citation.id,
-                            metadata: {
-                              title: citation.metadata?.title || `Citation ${index + 1}`,
-                              url: citation.metadata?.url || null,
-                              ...citation.metadata
-                            }
-                          };
-                          citationDocuments[citation.id] = validCitation;
-                        } else {
-                          console.warn('Invalid citation format at index', index, citation);
-                        }
-                      });
-                    } else {
-                      console.warn('web_search_citations is not an array:', parsed.venice_parameters.web_search_citations);
-                    }
+                     console.log('🔗 Citations from venice_parameters:', parsed.venice_parameters.web_search_citations);
+                     if (Array.isArray(parsed.venice_parameters.web_search_citations)) {
+                       const prevCitationCount = Object.keys(citationDocuments).length;
+                       parsed.venice_parameters.web_search_citations.forEach((citation, index) => {
+                         // Venice API returns flat citation objects with title, url, content, date
+                         // Use array index as the citation ID (0-based to match [REF]0[/REF] format)
+                         const citationId = String(index);
+                         const validCitation = {
+                           id: citationId,
+                           metadata: {
+                             title: citation.title || `Citation ${index + 1}`,
+                             url: citation.url || null,
+                             content: citation.content || null,
+                             date: citation.date || null
+                           }
+                         };
+                         citationDocuments[citationId] = validCitation;
+                       });
+                       if (Object.keys(citationDocuments).length > prevCitationCount) {
+                         citationsJustLoaded = true;
+                       }
+                     } else {
+                       console.warn('web_search_citations is not an array:', parsed.venice_parameters.web_search_citations);
+                     }
                   } else if (parsed.type === 'tool_call' && parsed.name === 'venice_web_search_documents') {
                     console.log('🛠️ Tool call venice_web_search_documents');
                     try {
                       const searchDocs = JSON.parse(parsed.arguments);
                       if (searchDocs.documents && typeof searchDocs.documents === 'object') {
                         // Process each document to ensure consistent structure
+                        const prevCitationCount = Object.keys(citationDocuments).length;
                         Object.entries(searchDocs.documents).forEach(([docId, doc]) => {
                           if (doc && typeof doc === 'object') {
                             const validDoc = {
@@ -2445,6 +2467,9 @@
                             console.warn('Invalid document format for ID:', docId, doc);
                           }
                         });
+                        if (Object.keys(citationDocuments).length > prevCitationCount) {
+                          citationsJustLoaded = true;
+                        }
                       } else {
                         console.warn('Invalid documents structure in search results:', searchDocs);
                       }
@@ -2452,15 +2477,27 @@
                       console.error('Failed to parse venice_web_search_documents arguments:', parseError);
                     }
                   }
-                } catch (citationError) {
-                  console.error('Error processing citations:', citationError);
-                }
+
+                   // If citations were just loaded and we have content, reformat it
+                   if (citationsJustLoaded && fullContent) {
+                     contentDiv.innerHTML = formatMessage(fullContent);
+                     scrollToBottom();
+                   }
+                 } catch (citationError) {
+                   console.error('Error processing citations:', citationError);
+                 }
 
                 // Content delta
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
                   fullContent += content;
-                  contentDiv.innerHTML = formatMessage(fullContent);
+                  // Only format if we have citations loaded, otherwise show plain text
+                  if (Object.keys(citationDocuments).length > 0) {
+                    contentDiv.innerHTML = formatMessage(fullContent);
+                  } else {
+                    // Show plain text for now, will format later when citations load
+                    contentDiv.innerHTML = fullContent.replace(/\n/g, '<br>');
+                  }
                   scrollToBottom();
                 }
               } catch (e) {
@@ -2496,6 +2533,11 @@
           hasUrl: !!doc.metadata?.url,
           urlPreview: doc.metadata?.url ? doc.metadata.url.substring(0, 50) + '...' : null
         })));
+
+        // Final format of content to ensure citations are linked
+        if (fullContent && Object.keys(citationDocuments).length > 0) {
+          contentDiv.innerHTML = formatMessage(fullContent);
+        }
 
         // Add citations section
         if (Object.keys(citationDocuments).length > 0) {

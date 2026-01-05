@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Citation Test</title>
+    <style>
+        .citation-link {
+            color: #8b5cf6;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85em;
+            vertical-align: super;
+            line-height: 1;
+            margin: 0 2px;
+            padding: 1px 4px;
+            border-radius: 3px;
+            background: rgba(139, 92, 246, 0.1);
+            transition: all 0.2s ease;
+        }
+
+        .citation-link:hover {
+            color: #06b6d4;
+            text-decoration: underline;
+            background: rgba(6, 182, 212, 0.1);
+        }
+        
+        .citations-section {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f5f5f5;
+            border-radius: 8px;
+            border-left: 3px solid #ccc;
+        }
+
+        .citations-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+
+        .citation-item {
+            margin-bottom: 0.75rem;
+            font-size: 0.85rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+            background: white;
+            border: 1px solid #ddd;
+        }
+
+        .citation-source-link {
+            color: #8b5cf6;
+            text-decoration: none;
+            word-break: break-all;
+            display: block;
+            line-height: 1.4;
+        }
+
+        .citation-source-link:hover {
+            color: #06b6d4;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Citation Format Test</h1>
+    
+    <div id="test-content"></div>
+    
+    <div id="test-sources"></div>
+    
+    <script>
+        // Simulate citation data from Venice API
+        const citationDocuments = {
+            '0': { id: '0', metadata: { title: 'Google\'s year in review: 8 areas with research breakthroughs in 2025', url: 'https://blog.google/technology/ai/2025-research-breakthroughs/' } },
+            '1': { id: '1', metadata: { title: 'Welcome to State of AI Report 2025', url: 'https://www.stateof.ai/' } },
+            '2': { id: '2', metadata: { title: 'The trends that will shape AI and tech in 2026 | IBM', url: 'https://www.ibm.com/think/news/ai-tech-trends-predictions-2026' } },
+            '3': { id: '3', metadata: { title: 'The Latest AI News and AI Breakthroughs that Matter Most: 2025 | News', url: 'https://www.crescendo.ai/news/latest-ai-news-and-updates' } }
+        };
+        
+        const citationIds = Object.keys(citationDocuments);
+        
+        // Test content from actual API response
+        const testContent = "The latest developments in AI technology are marked by significant advancements across various domains. In 2025, Google made notable breakthroughs with models like Gemini 3 and Gemma 3, enhancing AI capabilities in reasoning, multimodality, and efficiency^1^.\n\nIBM has predicted that 2026 will be a pivotal year for AI, particularly with the emergence of quantum computing. IBM announced that this year will mark the first time a quantum computer can outperform a classical computer^3^.\n\nIn the realm of AI research, the State of AI Report 2025 provides a comprehensive analysis of global progress in artificial intelligence, covering advancements in research, industry, geopolitics, and AI safety^2^.";
+        
+        // Format citations (simplified version of formatMessage function)
+        function formatMessage(content) {
+            const citationIds = Object.keys(citationDocuments);
+            
+            return content
+                // Support both [REF]0[/REF] format (0-based) and ^1^ format (1-based)
+                .replace(/\[REF\](\d+(?:,\d+)*)\[\/REF\]|\^(\d+(?:,\d+)*)\^/g, (match, refNumbers, caretNumbers) => {
+                    // Determine which format matched and get numbers
+                    const numbers = refNumbers || caretNumbers;
+                    const isRefFormat = !!refNumbers; // [REF] format is 0-based, ^ format is 1-based
+                    
+                    const citationList = numbers.split(',');
+                    return citationList.map(citationNum => {
+                        const num = parseInt(citationNum.trim());
+                        
+                        // Handle different indexing based on format
+                        let citationId, displayNum;
+                        if (isRefFormat) {
+                            // [REF] format: 0-based indexing
+                            citationId = String(num);
+                            displayNum = num + 1;
+                        } else {
+                            // ^ format: 1-based indexing
+                            citationId = String(num - 1);
+                            displayNum = num;
+                        }
+                        
+                        if (displayNum < 1 || displayNum > citationIds.length) {
+                            console.warn(`Invalid citation number: ${num} (${isRefFormat ? '0-based' : '1-based'}) -> ${displayNum} (display). Available: 1-${citationIds.length}`);
+                            return `[${displayNum}]`;
+                        }
+                        const citation = citationDocuments[citationId];
+                        
+                        if (!citation) {
+                            console.warn(`Citation not found for ID: ${citationId}`);
+                            return `[${displayNum}]`;
+                        }
+
+                        const title = citation?.metadata?.title || `Source ${displayNum}`;
+                        return `<a href="${citation?.metadata?.url}" class="citation-link" data-citation="${citationId}" data-citation-num="${displayNum}" title="${title}" target="_blank">[${displayNum}]</a>`;
+                    }).join('');
+                });
+        }
+        
+        // Add citations section
+        function addCitationsSection(contentDiv) {
+            if (Object.keys(citationDocuments).length === 0) {
+                return;
+            }
+            
+            // Create citations section
+            const citationsSection = document.createElement('div');
+            citationsSection.className = 'citations-section';
+            
+            const title = document.createElement('div');
+            title.className = 'citations-title';
+            title.textContent = 'Sources:';
+            citationsSection.appendChild(title);
+            
+            // Get citations in the order they appear in the references (numeric order)
+            const citationIds = Object.keys(citationDocuments);
+            citationIds.forEach((citationId, index) => {
+                const doc = citationDocuments[citationId];
+                const citationNumber = index + 1;
+                
+                if (!doc) {
+                    console.warn(`Missing citation data for ID: ${citationId}`);
+                    return;
+                }
+                
+                const citationItem = document.createElement('div');
+                citationItem.className = 'citation-item';
+                
+                const citationLink = document.createElement('a');
+                citationLink.href = doc.metadata?.url;
+                citationLink.className = 'citation-source-link';
+                citationLink.setAttribute('data-citation-id', citationId);
+                citationLink.setAttribute('data-citation-num', citationNumber.toString());
+                citationLink.target = '_blank';
+                citationLink.rel = 'noopener noreferrer';
+                
+                const title = doc.metadata?.title || `Source ${citationNumber}`;
+                citationLink.textContent = `[${citationNumber}] ${title}`;
+                
+                citationItem.appendChild(citationLink);
+                citationsSection.appendChild(citationItem);
+            });
+            
+            contentDiv.appendChild(citationsSection);
+        }
+        
+        // Display test content
+        document.getElementById('test-content').innerHTML = formatMessage(testContent);
+        addCitationsSection(document.getElementById('test-sources'));
+        
+        console.log('Citation data:', citationDocuments);
+    </script>
+</body>
+</html>

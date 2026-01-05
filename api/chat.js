@@ -199,7 +199,9 @@ export default async function handler(request) {
         temperature: body.temperature ?? 0.7,
         stream: stream,
         venice_parameters: {
-          enable_web_search: body.enable_web_search || "auto"
+          enable_web_search: body.enable_web_search || "auto",
+          enable_web_citations: true,
+          include_search_results_in_stream: true
         }
       })
     });
