@@ -1487,6 +1487,219 @@
         padding: 0.35rem 0.7rem;
       }
     }
+    /* Scheduled Prompt Section */
+    .scheduled-section {
+      border-bottom: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+    }
+
+    .scheduled-header {
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: background-color 0.2s ease;
+    }
+
+    .scheduled-header:hover {
+      background: var(--shadow-light);
+    }
+
+    .scheduled-header .expand-icon {
+      width: 16px;
+      height: 16px;
+      transition: transform 0.2s ease;
+    }
+
+    .scheduled-section.collapsed .expand-icon {
+      transform: rotate(-90deg);
+    }
+
+    .scheduled-content {
+      padding: 0.75rem 1rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.2s ease, padding 0.3s ease;
+      max-height: 500px;
+    }
+
+    .scheduled-section.collapsed .scheduled-content {
+      max-height: 0;
+      opacity: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    .scheduled-toggle-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .scheduled-toggle-wrapper span {
+      font-size: 0.85rem;
+      color: var(--text-primary);
+    }
+
+    .scheduled-textarea {
+      width: 100%;
+      min-height: 60px;
+      max-height: 120px;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      font-size: 0.85rem;
+      resize: vertical;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .scheduled-textarea:focus {
+      outline: none;
+      border-color: var(--border-color);
+      box-shadow: 0 0 0 2px var(--shadow-light);
+    }
+
+    .scheduled-textarea::placeholder {
+      color: var(--text-secondary);
+    }
+
+    .time-picker {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+    }
+
+    .time-picker select {
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--glass-border);
+      border-radius: 6px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .time-picker select:focus {
+      outline: none;
+      border-color: var(--border-color);
+    }
+
+    .scheduled-overrides {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .scheduled-overrides label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .scheduled-overrides select {
+      flex: 1;
+      max-width: 140px;
+      padding: 0.3rem 0.4rem;
+      border: 1px solid var(--glass-border);
+      border-radius: 6px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .scheduled-overrides select:focus {
+      outline: none;
+      border-color: var(--border-color);
+    }
+
+    .test-btn {
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .test-btn:hover {
+      background: var(--shadow-light);
+      border-color: var(--border-color);
+    }
+
+    .test-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .scheduled-status {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-align: center;
+      padding: 0.25rem;
+    }
+
+    .scheduled-status.active {
+      color: var(--border-color);
+    }
+
+    /* Notification permission banner */
+    .notification-banner {
+      padding: 0.5rem 0.75rem;
+      background: var(--shadow-light);
+      border-radius: 6px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .notification-banner.hidden {
+      display: none;
+    }
+
+    .notification-banner button {
+      padding: 0.25rem 0.5rem;
+      background: var(--button-bg);
+      border: none;
+      border-radius: 4px;
+      color: var(--button-text);
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .notification-banner button:hover {
+      background: var(--button-hover);
+    }
+
+    /* Scheduled conversation indicator */
+    .conversation-item.scheduled .conversation-title::before {
+      content: '🕐 ';
+    }
+
   </style>
 </head>
 <body>
@@ -1621,6 +1834,72 @@
           New Chat
         </button>
       </div>
+      <!-- Scheduled Prompt Section -->
+      <div class="scheduled-section collapsed" id="scheduledSection">
+        <div class="scheduled-header" id="scheduledHeader">
+          <span>Scheduled Prompt</span>
+          <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6 6 6-6"></path>
+          </svg>
+        </div>
+        <div class="scheduled-content">
+          <div class="scheduled-toggle-wrapper">
+            <label class="web-search-toggle">
+              <input type="checkbox" id="scheduledEnabled">
+              <span class="web-search-slider">
+                <svg class="web-on-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <svg class="web-off-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </span>
+            </label>
+            <span>Enable daily prompt</span>
+          </div>
+
+          <textarea 
+            class="scheduled-textarea" 
+            id="scheduledPrompt" 
+            placeholder="What would you like to ask daily? e.g., What is the jewelry industry news today?"
+          ></textarea>
+
+          <div class="time-picker">
+            <span>Run at:</span>
+            <select id="scheduledHour"></select>
+            <span>:</span>
+            <select id="scheduledMinute"></select>
+          </div>
+
+          <div class="scheduled-overrides">
+            <label>
+              <span>Model:</span>
+              <select id="scheduledModel">
+                <option value="">Use current</option>
+              </select>
+            </label>
+            <label>
+              <span>Web search:</span>
+              <select id="scheduledWebSearch">
+                <option value="">Use current</option>
+                <option value="true">Always on</option>
+                <option value="false">Always off</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="notification-banner hidden" id="notificationBanner">
+            <span>Enable notifications?</span>
+            <button id="enableNotifications">Allow</button>
+          </div>
+
+          <button class="test-btn" id="testScheduledBtn">Test Now</button>
+
+          <div class="scheduled-status" id="scheduledStatus"></div>
+        </div>
+      </div>
+
       <div class="conversation-list" id="conversationList">
         <div class="no-conversations">No conversations yet</div>
       </div>
@@ -1682,6 +1961,21 @@
     // Conversation management state
     let conversations = {};
     let currentConversationId = null;
+
+    // Scheduled prompt state
+    let scheduledPromptSettings = {
+      enabled: false,
+      prompt: '',
+      hour: 8,
+      minute: 0,
+      model: null,        // null = use current
+      webSearch: null,    // null = use current
+      lastRunDate: null,  // "2026-01-06" format
+      lastRunTime: null,  // "16:30" format - actual time it ran
+      conversationId: null
+    };
+    let schedulerInterval = null;
+    let isRunningScheduled = false;
 
     // Helper to get current conversation's messages (for backward compat)
     function getChatHistory() {
@@ -1890,7 +2184,7 @@
       }
       
       conversationList.innerHTML = convArray.map(conv => `
-        <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}" 
+        <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''} ${conv.isScheduled ? 'scheduled' : ''}" 
              data-conversation-id="${conv.id}"
              onclick="switchConversation('${conv.id}')">
           <div class="conversation-info" onclick="switchConversation('${conv.id}')">
@@ -2200,6 +2494,12 @@
           sidebarOverlay.classList.add('active');
         }
       });
+
+      // Initialize scheduled prompt feature
+      loadScheduledPromptSettings();
+      renderScheduledPromptUI();
+      setupScheduledPromptListeners();
+      initScheduler();
     }
 
     // Fetch available models from the API
@@ -2255,6 +2555,9 @@
         
         // Update web search toggle based on current model's capabilities
         updateWebSearchToggle();
+
+        // Populate scheduled model selector
+        populateScheduledModelSelector();
         
       } catch (error) {
         console.error('Error fetching models:', error);
@@ -2545,20 +2848,20 @@ if (!citation) {
              const title = citation?.metadata?.title || `Source ${displayNum}`;
              return `<a href="${href}" class="citation-link" data-citation="${citationId}" data-citation-num="${displayNum}" title="${escapeHtml(title)}" target="_blank">[${displayNum}]</a>`;
            }).join('');
-        })
+        });
 
         // Table parsing - process before other markdown to allow nested formatting in cells
-        formatted = formatTables(formatted);
-        // Code blocks
-        .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
-        // Inline code
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        // Bold
-        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-        // Italic
-        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-        // Line breaks
-        .replace(/\n/g, '<br>');
+        formatted = formatTables(formatted)
+          // Code blocks
+          .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+          // Inline code
+          .replace(/`([^`]+)`/g, '<code>$1</code>')
+          // Bold
+          .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+          // Italic
+          .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+          // Line breaks
+          .replace(/\n/g, '<br>');
       
       return formatted;
     }
@@ -2951,6 +3254,567 @@ if (!citation) {
 
     // Initialize web search toggle from saved preference
     webSearchToggle.checked = webSearchEnabled;
+
+    // ============================================
+    // SCHEDULED PROMPT FUNCTIONS
+    // ============================================
+
+    // Load scheduled prompt settings from localStorage
+    function loadScheduledPromptSettings() {
+      const saved = localStorage.getItem('scheduledPrompt');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          scheduledPromptSettings = { ...scheduledPromptSettings, ...parsed };
+        } catch (e) {
+          console.error('Failed to parse scheduled prompt settings:', e);
+        }
+      }
+    }
+
+    // Save scheduled prompt settings to localStorage
+    function saveScheduledPromptSettings() {
+      localStorage.setItem('scheduledPrompt', JSON.stringify(scheduledPromptSettings));
+    }
+
+    // Toggle the scheduled section expand/collapse
+    function toggleScheduledSection() {
+      const section = document.getElementById('scheduledSection');
+      section.classList.toggle('collapsed');
+      localStorage.setItem('scheduledSectionCollapsed', section.classList.contains('collapsed'));
+    }
+
+    // Populate hour and minute dropdowns
+    function populateTimeSelectors() {
+      const hourSelect = document.getElementById('scheduledHour');
+      const minuteSelect = document.getElementById('scheduledMinute');
+
+      // Hours 0-23
+      hourSelect.innerHTML = '';
+      for (let h = 0; h < 24; h++) {
+        const option = document.createElement('option');
+        option.value = h;
+        option.textContent = h.toString().padStart(2, '0');
+        hourSelect.appendChild(option);
+      }
+
+      // Minutes: 00, 15, 30, 45
+      minuteSelect.innerHTML = '';
+      [0, 15, 30, 45].forEach(m => {
+        const option = document.createElement('option');
+        option.value = m;
+        option.textContent = m.toString().padStart(2, '0');
+        minuteSelect.appendChild(option);
+      });
+    }
+
+    // Populate model selector for scheduled prompt
+    function populateScheduledModelSelector() {
+      const scheduledModelSelect = document.getElementById('scheduledModel');
+      if (!scheduledModelSelect) return;
+
+      // Keep "Use current" option, add all models from main selector
+      const currentOptions = modelSelect.querySelectorAll('option');
+      scheduledModelSelect.innerHTML = '<option value="">Use current</option>';
+      
+      currentOptions.forEach(opt => {
+        if (opt.value) {
+          const newOpt = document.createElement('option');
+          newOpt.value = opt.value;
+          newOpt.textContent = opt.textContent;
+          scheduledModelSelect.appendChild(newOpt);
+        }
+      });
+    }
+
+    // Render the scheduled prompt UI from current settings
+    function renderScheduledPromptUI() {
+      const enabledCheckbox = document.getElementById('scheduledEnabled');
+      const promptTextarea = document.getElementById('scheduledPrompt');
+      const hourSelect = document.getElementById('scheduledHour');
+      const minuteSelect = document.getElementById('scheduledMinute');
+      const modelSelect = document.getElementById('scheduledModel');
+      const webSearchSelect = document.getElementById('scheduledWebSearch');
+      const statusDiv = document.getElementById('scheduledStatus');
+      const section = document.getElementById('scheduledSection');
+
+      // Populate time selectors
+      populateTimeSelectors();
+
+      // Set values from settings
+      enabledCheckbox.checked = scheduledPromptSettings.enabled;
+      promptTextarea.value = scheduledPromptSettings.prompt || '';
+      hourSelect.value = scheduledPromptSettings.hour;
+      minuteSelect.value = scheduledPromptSettings.minute;
+      
+      if (modelSelect) {
+        modelSelect.value = scheduledPromptSettings.model || '';
+      }
+      if (webSearchSelect) {
+        webSearchSelect.value = scheduledPromptSettings.webSearch === null ? '' : 
+                                scheduledPromptSettings.webSearch.toString();
+      }
+
+      // Restore collapsed state
+      const isCollapsed = localStorage.getItem('scheduledSectionCollapsed') !== 'false';
+      if (isCollapsed) {
+        section.classList.add('collapsed');
+      } else {
+        section.classList.remove('collapsed');
+      }
+
+      // Update status
+      updateScheduledStatus();
+
+      // Show notification banner if needed
+      updateNotificationBanner();
+    }
+
+    // Update the status display
+    function updateScheduledStatus() {
+      const statusDiv = document.getElementById('scheduledStatus');
+      if (!statusDiv) return;
+
+      if (!scheduledPromptSettings.enabled) {
+        statusDiv.textContent = '';
+        statusDiv.className = 'scheduled-status';
+        return;
+      }
+
+      const scheduledTimeStr = `${String(scheduledPromptSettings.hour).padStart(2, '0')}:${String(scheduledPromptSettings.minute).padStart(2, '0')}`;
+      
+      if (scheduledPromptSettings.lastRunDate) {
+        const today = getLocalDateString(new Date());
+        const lastRunTimeStr = scheduledPromptSettings.lastRunTime || scheduledTimeStr;
+        
+        if (scheduledPromptSettings.lastRunDate === today) {
+          statusDiv.textContent = `Last run: today at ${lastRunTimeStr}`;
+          statusDiv.className = 'scheduled-status';
+        } else {
+          statusDiv.textContent = `Next run: ${scheduledTimeStr}`;
+          statusDiv.className = 'scheduled-status active';
+        }
+      } else {
+        statusDiv.textContent = `Next run: ${scheduledTimeStr}`;
+        statusDiv.className = 'scheduled-status active';
+      }
+    }
+
+    // Update notification permission banner
+    function updateNotificationBanner() {
+      const banner = document.getElementById('notificationBanner');
+      if (!banner) return;
+
+      if (!('Notification' in window)) {
+        banner.classList.add('hidden');
+        return;
+      }
+
+      // Show banner if enabled but no permission yet
+      if (scheduledPromptSettings.enabled && Notification.permission === 'default') {
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    // Handle setting changes
+    function onScheduledSettingChange() {
+      const enabledCheckbox = document.getElementById('scheduledEnabled');
+      const promptTextarea = document.getElementById('scheduledPrompt');
+      const hourSelect = document.getElementById('scheduledHour');
+      const minuteSelect = document.getElementById('scheduledMinute');
+      const scheduledModelSelect = document.getElementById('scheduledModel');
+      const webSearchSelect = document.getElementById('scheduledWebSearch');
+
+      scheduledPromptSettings.enabled = enabledCheckbox.checked;
+      scheduledPromptSettings.prompt = promptTextarea.value;
+      scheduledPromptSettings.hour = parseInt(hourSelect.value, 10);
+      scheduledPromptSettings.minute = parseInt(minuteSelect.value, 10);
+      scheduledPromptSettings.model = scheduledModelSelect.value || null;
+      
+      const webSearchValue = webSearchSelect.value;
+      scheduledPromptSettings.webSearch = webSearchValue === '' ? null : webSearchValue === 'true';
+
+      saveScheduledPromptSettings();
+      updateScheduledStatus();
+      updateNotificationBanner();
+    }
+
+    // Request notification permission
+    function requestNotificationPermission() {
+      if (!('Notification' in window)) return;
+      
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+          updateNotificationBanner();
+        });
+      }
+    }
+
+    // Show a browser notification
+    function showScheduledNotification(title, body) {
+      if (!('Notification' in window)) return;
+      if (Notification.permission !== 'granted') return;
+
+      // Truncate body if too long
+      const truncatedBody = body.length > 200 ? body.substring(0, 197) + '...' : body;
+
+      const notification = new Notification(title, {
+        body: truncatedBody,
+        tag: 'scheduled-prompt',
+        requireInteraction: false
+      });
+
+      notification.onclick = () => {
+        window.focus();
+        if (scheduledPromptSettings.conversationId) {
+          switchConversation(scheduledPromptSettings.conversationId);
+        }
+        notification.close();
+      };
+
+      // Auto-close after 10 seconds
+      setTimeout(() => notification.close(), 10000);
+    }
+
+    // Initialize the scheduler
+    function initScheduler() {
+      // Check every 60 seconds
+      schedulerInterval = setInterval(checkScheduledPrompt, 60000);
+      // Also check immediately on load
+      checkScheduledPrompt();
+    }
+
+    // Helper to get local date string in YYYY-MM-DD format
+    function getLocalDateString(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    // Check if it's time to run the scheduled prompt
+    function checkScheduledPrompt() {
+      if (!scheduledPromptSettings.enabled) return;
+      if (!scheduledPromptSettings.prompt.trim()) return;
+      if (isRunningScheduled) return;
+
+      const now = new Date();
+      const today = getLocalDateString(now);
+
+      // Already ran today?
+      if (scheduledPromptSettings.lastRunDate === today) return;
+
+      // Is it time? (check if current time is at or past scheduled time)
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const scheduledHour = parseInt(scheduledPromptSettings.hour, 10);
+      const scheduledMinute = parseInt(scheduledPromptSettings.minute, 10);
+      
+      console.log(`[Scheduler] Checking: current=${currentHour}:${currentMinute}, scheduled=${scheduledHour}:${scheduledMinute}, lastRun=${scheduledPromptSettings.lastRunDate}, today=${today}`);
+      
+      if (currentHour > scheduledHour || 
+          (currentHour === scheduledHour && currentMinute >= scheduledMinute)) {
+        console.log('[Scheduler] Time reached, running scheduled prompt...');
+        runScheduledPrompt(false);
+      }
+    }
+
+    // Get or create the dedicated scheduled conversation
+    function getOrCreateScheduledConversation() {
+      // If we have a saved conversation ID and it still exists, use it
+      if (scheduledPromptSettings.conversationId && 
+          conversations[scheduledPromptSettings.conversationId]) {
+        return scheduledPromptSettings.conversationId;
+      }
+
+      // Create a new dedicated conversation
+      const newId = generateConversationId();
+      conversations[newId] = {
+        id: newId,
+        title: 'Scheduled Daily Prompt',
+        messages: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        model: scheduledPromptSettings.model || modelSelect.value || 'llama-3.3-70b',
+        isScheduled: true
+      };
+
+      scheduledPromptSettings.conversationId = newId;
+      saveScheduledPromptSettings();
+      saveConversations();
+      renderConversationList();
+
+      return newId;
+    }
+
+    // Run the scheduled prompt
+    async function runScheduledPrompt(isTest = false) {
+      if (isRunningScheduled) return;
+      if (!scheduledPromptSettings.prompt.trim()) {
+        if (isTest) {
+          alert('Please enter a prompt first.');
+        }
+        return;
+      }
+
+      isRunningScheduled = true;
+      const testBtn = document.getElementById('testScheduledBtn');
+      if (testBtn) {
+        testBtn.disabled = true;
+        testBtn.textContent = 'Running...';
+      }
+
+      try {
+        // Get or create the scheduled conversation
+        const convId = getOrCreateScheduledConversation();
+        const conversation = conversations[convId];
+
+        // Determine which model and web search setting to use
+        const useModel = scheduledPromptSettings.model || modelSelect.value;
+        const useWebSearch = scheduledPromptSettings.webSearch !== null 
+          ? scheduledPromptSettings.webSearch 
+          : webSearchEnabled;
+
+        // Add a date separator message
+        const now = new Date();
+        const dateStr = now.toLocaleDateString([], { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        // Add user message (the scheduled prompt)
+        conversation.messages.push({
+          role: 'user',
+          content: `[${dateStr}]\n\n${scheduledPromptSettings.prompt}`
+        });
+        conversation.updatedAt = new Date().toISOString();
+        saveConversations();
+
+        // Make the API request
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-TOS-Accepted': 'true'
+          },
+          body: JSON.stringify({
+            model: useModel,
+            messages: [{
+              role: 'user',
+              content: scheduledPromptSettings.prompt
+            }],
+            stream: true,
+            enable_web_search: useWebSearch ? "auto" : "off",
+            venice_parameters: {
+              include_search_results_in_stream: true,
+              enable_web_citations: true,
+              return_search_results_as_documents: true
+            }
+          })
+        });
+
+        // Update rate limit from headers
+        const remaining = response.headers.get('X-RateLimit-Remaining');
+        if (remaining) {
+          updateRateLimit(remaining);
+        }
+
+        if (!response.ok) {
+          let errorMessage = `Request failed with status ${response.status}`;
+          try {
+            const error = await response.json();
+            errorMessage = error.error || error.message || errorMessage;
+          } catch (e) {}
+          throw new Error(errorMessage);
+        }
+
+        // Process streaming response
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let fullContent = '';
+        let scheduledCitationDocuments = {};
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (trimmedLine.startsWith('data: ')) {
+              const data = trimmedLine.slice(6);
+              if (data === '[DONE]') continue;
+
+              try {
+                const parsed = JSON.parse(data);
+
+                // Handle citations
+                if (parsed.venice_parameters?.web_search_citations) {
+                  if (Array.isArray(parsed.venice_parameters.web_search_citations)) {
+                    parsed.venice_parameters.web_search_citations.forEach((citation, index) => {
+                      const citationId = String(index);
+                      scheduledCitationDocuments[citationId] = {
+                        id: citationId,
+                        metadata: {
+                          title: citation.title || `Citation ${index + 1}`,
+                          url: citation.url || null,
+                          content: citation.content || null,
+                          date: citation.date || null
+                        }
+                      };
+                    });
+                  }
+                }
+
+                // Content delta
+                const content = parsed.choices?.[0]?.delta?.content;
+                if (content) {
+                  fullContent += content;
+                }
+              } catch (e) {
+                console.warn('Failed to parse scheduled streaming data:', e);
+              }
+            }
+          }
+        }
+
+        // Process final buffer
+        if (buffer.trim().startsWith('data: ')) {
+          const data = buffer.trim().slice(6);
+          if (data !== '[DONE]') {
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) {
+                fullContent += content;
+              }
+            } catch (e) {}
+          }
+        }
+
+        // Save assistant message
+        if (fullContent) {
+          conversation.messages.push({
+            role: 'assistant',
+            content: fullContent,
+            citations: Object.keys(scheduledCitationDocuments).length > 0 
+              ? { ...scheduledCitationDocuments } 
+              : undefined
+          });
+          conversation.updatedAt = new Date().toISOString();
+          saveConversations();
+
+          // Update lastRunDate and lastRunTime only if not a test
+          if (!isTest) {
+            const runTime = new Date();
+            scheduledPromptSettings.lastRunDate = getLocalDateString(runTime);
+            scheduledPromptSettings.lastRunTime = `${String(runTime.getHours()).padStart(2, '0')}:${String(runTime.getMinutes()).padStart(2, '0')}`;
+            saveScheduledPromptSettings();
+          }
+
+          // Show notification
+          const notificationTitle = isTest ? 'Test Prompt Complete' : 'Scheduled Prompt Ready';
+          const summary = fullContent.replace(/\n/g, ' ').substring(0, 200);
+          showScheduledNotification(notificationTitle, summary);
+
+          // Update UI
+          renderConversationList();
+          updateScheduledStatus();
+
+          // If currently viewing this conversation, refresh the display
+          if (currentConversationId === convId) {
+            displayCurrentConversation();
+          }
+        }
+
+      } catch (error) {
+        console.error('Scheduled prompt failed:', error);
+        
+        // Add error message to conversation
+        const convId = scheduledPromptSettings.conversationId;
+        if (convId && conversations[convId]) {
+          conversations[convId].messages.push({
+            role: 'assistant',
+            content: `Error running scheduled prompt: ${error.message}`
+          });
+          conversations[convId].updatedAt = new Date().toISOString();
+          saveConversations();
+        }
+
+        if (isTest) {
+          alert(`Error: ${error.message}`);
+        }
+      } finally {
+        isRunningScheduled = false;
+        if (testBtn) {
+          testBtn.disabled = false;
+          testBtn.textContent = 'Test Now';
+        }
+      }
+    }
+
+    // Setup scheduled prompt event listeners
+    function setupScheduledPromptListeners() {
+      const header = document.getElementById('scheduledHeader');
+      const enabledCheckbox = document.getElementById('scheduledEnabled');
+      const promptTextarea = document.getElementById('scheduledPrompt');
+      const hourSelect = document.getElementById('scheduledHour');
+      const minuteSelect = document.getElementById('scheduledMinute');
+      const scheduledModelSelect = document.getElementById('scheduledModel');
+      const webSearchSelect = document.getElementById('scheduledWebSearch');
+      const testBtn = document.getElementById('testScheduledBtn');
+      const enableNotificationsBtn = document.getElementById('enableNotifications');
+
+      if (header) {
+        header.addEventListener('click', toggleScheduledSection);
+      }
+
+      if (enabledCheckbox) {
+        enabledCheckbox.addEventListener('change', onScheduledSettingChange);
+      }
+
+      if (promptTextarea) {
+        promptTextarea.addEventListener('input', onScheduledSettingChange);
+      }
+
+      if (hourSelect) {
+        hourSelect.addEventListener('change', onScheduledSettingChange);
+      }
+
+      if (minuteSelect) {
+        minuteSelect.addEventListener('change', onScheduledSettingChange);
+      }
+
+      if (scheduledModelSelect) {
+        scheduledModelSelect.addEventListener('change', onScheduledSettingChange);
+      }
+
+      if (webSearchSelect) {
+        webSearchSelect.addEventListener('change', onScheduledSettingChange);
+      }
+
+      if (testBtn) {
+        testBtn.addEventListener('click', () => runScheduledPrompt(true));
+      }
+
+      if (enableNotificationsBtn) {
+        enableNotificationsBtn.addEventListener('click', requestNotificationPermission);
+      }
+    }
+
+    // ============================================
+    // END SCHEDULED PROMPT FUNCTIONS
+    // ============================================
 
     // Initialize on load
     init();
