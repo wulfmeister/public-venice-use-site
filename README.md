@@ -4,6 +4,10 @@ A free, privacy-focused API proxy for Venice.ai with a built-in web chat interfa
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Vercel-black.svg)
+[![Venice AI](https://img.shields.io/badge/Powered%20by-Venice.ai-purple)](https://venice.ai)
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](https://github.com/yourusername/venice-community-proxy/issues)
+
+> **Note:** This project is presented as-is as an experiment for working with the Venice API. The codebase is extremely basic and should be broken into multiple files eventually.
 
 ## Features
 
@@ -16,6 +20,7 @@ A free, privacy-focused API proxy for Venice.ai with a built-in web chat interfa
 - **Local Storage Only** - Conversations persist only in your browser's localStorage
 - **Rate Limiting** - 20 requests per hour per IP
 - **Terms of Service** - Built-in ToS acceptance flow
+- **Scheduled Daily Prompts** - Set a prompt to run automatically once per day with browser notifications
 
 ## Privacy Architecture
 
@@ -119,7 +124,7 @@ venice-community-proxy/
 │   ├── chat.js          # POST /api/chat - main proxy endpoint (Edge Runtime)
 │   └── info.js          # GET /api/info - returns available models + capabilities
 ├── public/
-│   ├── index.html       # Chat UI (single-page app with multi-chat, themes)
+│   ├── index.html       # Chat UI (single-page app with multi-chat, themes, scheduled prompts)
 │   └── tos.html         # Terms of Service
 ├── package.json
 ├── vercel.json          # Vercel configuration
@@ -228,6 +233,39 @@ Responses are streamed directly from Venice.ai to the browser. The proxy pipes t
 ### Model Filtering
 
 Models are filtered by cost on first request and cached in memory. This ensures users can only access reasonably-priced models while keeping the list dynamic as Venice adds new models.
+
+## Known Issues
+
+### Code Quality
+- **Single-file architecture** - The entire frontend (~3800 lines) is in one HTML file
+- **No CSS/JS separation** - All styles and scripts are inline, preventing browser caching
+- **Duplicate CSS rules** - Some styles are repeated unnecessarily
+
+### UX/Accessibility
+- **Crowded header** - Too many controls visible at once on desktop
+- **Missing accessibility attributes** - No ARIA labels, landmarks, or live regions
+- **Limited keyboard navigation** - Focus states and shortcuts need improvement
+
+### Missing Features
+- No message editing or regeneration
+- No conversation search or export
+- No copy button for AI responses
+- No image/file upload support
+
+See [`public/open-issues.md`](public/open-issues.md) for a detailed breakdown.
+
+## Roadmap
+
+Potential future enhancements (contributions welcome!):
+
+- [ ] **Deep Search** - More comprehensive web search with multiple queries
+- [ ] **File Uploads** - Support for uploading documents and images
+- [ ] **User Accounts** - Optional authentication for cross-device sync
+- [ ] **Data Persistence** - Server-side storage option for conversations
+- [ ] **Full Context Mode** - Use all past chats as context for new conversations
+- [ ] **More Models** - Expand model selection and add custom model support
+- [ ] **Search API Options** - Alternative search providers and configurations
+- [ ] **Code Refactoring** - Split into separate CSS/JS files for maintainability
 
 ## License
 
