@@ -1,19 +1,67 @@
 {
-  "name": "venice-community-proxy",
+  "name": "openchat",
   "version": "1.0.0",
-  "description": "Free community API proxy for Venice.ai with built-in chat UI",
+  "description": "A free, privacy-focused AI chat app powered by Venice.ai",
   "private": true,
   "scripts": {
-    "build": "echo 'Static site - no build needed'",
-    "deploy": "vercel --prod"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "test:ci": "vitest --run",
+    "deploy": "vercel --prod",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "keywords": [
+    "openchat",
     "venice",
     "ai",
-    "proxy",
-    "llm",
-    "chat"
+    "chat",
+    "llm"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^25.0.6",
+    "@types/papaparse": "^5.5.2",
+    "@types/prismjs": "^1.26.6",
+    "@types/react": "^19.2.8",
+    "autoprefixer": "^10.4.23",
+    "clsx": "^2.1.1",
+    "isomorphic-dompurify": "^2.36.0",
+    "lucide-react": "^0.564.0",
+    "next": "^16.1.1",
+    "papaparse": "^5.5.3",
+    "pdfjs-dist": "^5.4.624",
+    "postcss": "^8.5.6",
+    "prismjs": "^1.30.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/dompurify": "^3.0.5",
+    "@vitejs/plugin-react": "^5.0.2",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^16.1.1",
+    "eslint-config-prettier": "^9.1.0",
+    "fake-indexeddb": "^6.2.1",
+    "jsdom": "^24.1.1",
+    "msw": "^2.10.2",
+    "prettier": "^3.3.2",
+    "prettier-plugin-tailwindcss": "^0.6.8",
+    "vitest": "^3.2.4"
+  }
 }

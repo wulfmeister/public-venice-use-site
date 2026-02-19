@@ -1,280 +1,316 @@
-# Venice AI Community Proxy
+# OpenChat
 
-A free, privacy-focused API proxy for Venice.ai with a built-in web chat interface.
+A free, privacy-focused AI chat app powered by Venice.ai with a built-in Next.js interface.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Vercel-black.svg)
 [![Venice AI](https://img.shields.io/badge/Powered%20by-Venice.ai-purple)](https://venice.ai)
-[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](https://github.com/yourusername/venice-community-proxy/issues)
-
-> **Note:** This project is presented as-is as an experiment for working with the Venice API. The codebase is extremely basic and should be broken into multiple files eventually.
+![Next.js](https://img.shields.io/badge/Next.js-16-black.svg?logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6.svg?logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3-06B6D4.svg?logo=tailwindcss&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-tested-6E9F18.svg?logo=vitest&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-e2e-2EAD33.svg?logo=playwright&logoColor=white)
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](https://github.com/yourusername/openchat/issues)
 
 ## Features
 
-- **Privacy-First Architecture** - Zero conversation logging; your chats stay in your browser
-- **Multiple AI Models** - Access Venice Uncensored, Llama 3.3 70B, DeepSeek R1, and more (dynamically loaded)
-- **Multi-Chat Management** - Create, rename, and organize multiple conversations
-- **Private Web Search** - AI can search the web without tracking (via Venice.ai)
-- **Light/Dark Theme** - Toggle between light cream and dark modes
-- **Streaming Responses** - See AI responses as they generate
-- **Local Storage Only** - Conversations persist only in your browser's localStorage
-- **Rate Limiting** - 20 requests per hour per IP
-- **Terms of Service** - Built-in ToS acceptance flow
-- **Scheduled Daily Prompts** - Set a prompt to run automatically once per day with browser notifications
+- **Privacy-First Architecture** — Zero conversation logging; chats stay in your browser
+- **Multiple AI Models** — Access GLM 5, Llama 3.3 70B, DeepSeek R1, and more via a custom model dropdown with capability badges (Vision, Web Search)
+- **Multi-Chat Management** — Create, rename, and organize conversations with date-grouped sidebar (Today, Yesterday, This Week, etc.) and search
+- **Image Generation & Upscaling** — Generate images with Nano Banana, Venice SD3.5, Seedream, and upscale existing images
+- **File Analysis** — Upload CSV, PDF, and XLSX files for AI-assisted analysis
+- **Syntax Highlighting** — Code blocks render with Prism.js token coloring (16 languages) and one-click copy
+- **Message Actions** — Copy any message or regenerate the last assistant response on hover
+- **Private Web Search** — AI searches the web without tracking (via Venice.ai)
+- **Custom System Prompt** — Configure a persistent system prompt for all conversations
+- **Scheduled Daily Prompts** — Set a prompt to auto-run at a specific time with browser notifications
+- **Light / Dark Theme** — Toggle between light and dark modes with theme-aware syntax highlighting
+- **Streaming Responses** — See AI responses as they generate in real-time
+- **Modern UI** — Shimmer loading skeletons, glassmorphism header, gradient welcome screen with quick-action cards
+- **Link Previews** — Dynamic Open Graph image generation for rich Slack/iMessage/social previews
+- **Rate Limiting** — 20 requests per hour per IP with progressive color indicator (green → amber → red)
+- **OpenAI-Compatible Endpoint** — Use as a drop-in Venice proxy at `/v1/chat/completions`
 
-## Privacy Architecture
-
-This proxy is designed to maximize user privacy. Here's how data flows:
+## Application State Machine
 
 ```
-┌─────────────┐    HTTPS/TLS    ┌─────────────┐    HTTPS/TLS    ┌─────────────┐
-│   Browser   │ ───────────────▶│   Vercel    │ ───────────────▶│  Venice.ai  │
-│             │◀─────────────── │ Edge Proxy  │◀─────────────── │     API     │
-└─────────────┘   (encrypted)   └─────────────┘   (encrypted)   └─────────────┘
-      │                                │                               │
-      │                                │                               │
-      ▼                                ▼                               ▼
- localStorage               No content logging              No storage of
- (conversations)            (only IP for rate limit)        prompts/responses
+┌─────────────────────────────────────────────────────────────────────┐
+│                        APPLICATION STATES                           │
+│                                                                     │
+│  ┌──────────┐   accept    ┌──────────┐  select   ┌──────────────┐  │
+│  │   TOS    │ ──────────▸ │   IDLE   │ ───────▸  │   CHATTING   │  │
+│  │  GATE    │             │  (empty) │ ◂───────  │  (streaming) │  │
+│  └──────────┘             └──────────┘  new chat  └──────────────┘  │
+│       │                     │    ▴                    │    │        │
+│       │ reject              │    │ done               │    │        │
+│       ▾                     ▾    │                    ▾    │        │
+│  ┌──────────┐           ┌──────────────┐        ┌─────────┐        │
+│  │  BLOCKED │           │   GENERATING │        │ ERROR   │        │
+│  │  (no UI) │           │   (image)    │        │ (retry) │        │
+│  └──────────┘           └──────────────┘        └─────────┘        │
+│                                                                     │
+│  ── Overlays (available in any state) ──────────────────────────    │
+│  Sidebar: search, date-grouped conversations, system prompt,        │
+│           scheduled prompt                                          │
+│  Header: model dropdown (text + image models, web search toggle,    │
+│          capability badges, rate limit), settings gear, theme btn   │
+│  Messages: hover actions (copy, regenerate), syntax-highlighted     │
+│            code blocks with copy button                             │
+│  Toasts: error / success / info notifications (bottom-right)        │
+│  Scheduled: background timer → auto-creates/updates conversation    │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-### What Gets Logged
+### State Transitions
 
-| Data | Logged? | Where | Duration |
-|------|---------|-------|----------|
-| Prompts/Messages | No | - | - |
-| AI Responses | No | - | - |
-| Conversation History | No | Browser only | Until cleared |
-| IP Addresses | Yes | In-memory | Until cold start |
-| Model Selection | Yes | In-memory | Per request |
-| Error Details | Yes | Vercel logs | Standard retention |
+| From         | Event                     | To                  | Description                                      |
+| ------------ | ------------------------- | ------------------- | ------------------------------------------------ |
+| `TOS_GATE`   | User accepts ToS          | `IDLE`              | ToS flag saved to localStorage                   |
+| `TOS_GATE`   | User rejects              | `BLOCKED`           | Cannot use the app                               |
+| `IDLE`       | User sends message        | `CHATTING`          | New conversation auto-created                    |
+| `IDLE`       | User clicks "New Chat"    | `IDLE`              | Empty conversation created                       |
+| `IDLE`       | User selects conversation | `CHATTING`          | Existing conversation loaded                     |
+| `CHATTING`   | User sends message        | `CHATTING`          | Message added, streaming begins                  |
+| `CHATTING`   | Stream completes          | `CHATTING`          | Assistant response finalized                     |
+| `CHATTING`   | Stream error              | `ERROR`             | Error displayed, user can retry                  |
+| `CHATTING`   | User deletes all convos   | `IDLE`              | Reset to empty state                             |
+| `IDLE`       | User requests image       | `GENERATING`        | Image generation request sent                    |
+| `GENERATING` | Image received            | `IDLE` / `CHATTING` | Image displayed                                  |
+| `*`          | Rate limit hit            | `ERROR`             | 429 response, retry timer shown                  |
+| `*`          | Scheduled prompt fires    | `CHATTING`          | Background prompt sent to dedicated conversation |
 
-### Privacy Guarantees
+### Data Flow
 
-1. **This Proxy**: Does not log, store, or have access to conversation content. Request bodies are parsed, validated, and forwarded without persistence.
-
-2. **Venice.ai**: Does not store prompts or model responses on their servers. Conversations exist only in your browser's localStorage. See [Venice.ai Privacy Architecture](https://venice.ai/privacy).
-
-3. **Vercel**: Provides hosting infrastructure with TLS 1.2/1.3 encryption. Does not log request/response bodies by default. See [Vercel Security Docs](https://vercel.com/docs/security).
-
-4. **Encryption**: All traffic is encrypted end-to-end using TLS. Vercel enforces HTTPS and does not allow unencrypted connections.
+```
+┌───────────────┐     POST /api/chat     ┌──────────────┐     POST /chat/completions     ┌─────────────┐
+│               │ ─────────────────────▸ │              │ ─────────────────────────────▸ │             │
+│    Browser    │     (streaming SSE)     │  Next.js API │     (streaming SSE)            │  Venice.ai  │
+│               │ ◂───────────────────── │    Routes    │ ◂───────────────────────────── │     API     │
+└───────────────┘                        └──────────────┘                                └─────────────┘
+       │                                        │
+       │ localStorage                           │ In-memory only
+       │ IndexedDB (images)                     │ (rate limit counters,
+       ▾                                        │  model cache 5 min TTL)
+  Conversations, settings               No content stored
+  Theme, system prompt                    IP → request count
+  Scheduled prompt config
+```
 
 ## Quick Start
 
-### 1. Clone the repository
+### 1. Clone and install
 
 ```bash
-git clone https://github.com/yourusername/venice-community-proxy.git
-cd venice-community-proxy
+git clone https://github.com/yourusername/openchat.git
+cd openchat
+npm install
 ```
 
-### 2. Install Vercel CLI (optional, for local development)
+### 2. Configure environment
 
 ```bash
-npm install -g vercel
+cp .env.example .env.local
 ```
 
-### 3. Set up environment variables
-
-Copy the example environment file:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and add your Venice API key:
+Edit `.env.local` and add your Venice API key:
 
 ```
 VENICE_API_KEY=your_actual_api_key_here
 ```
 
-### 4. Deploy to Vercel
-
-#### Option A: Using Vercel CLI
+### 3. Run locally
 
 ```bash
-# Login to Vercel
-vercel login
+npm run dev
+```
 
-# Deploy (will prompt for environment variables)
+Visit `http://localhost:3000`.
+
+### 4. Deploy to Vercel
+
+```bash
 vercel --prod
 ```
 
-#### Option B: Using Vercel Dashboard
-
-1. Push your code to GitHub
-2. Go to [vercel.com](https://vercel.com) and import your repository
-3. Add `VENICE_API_KEY` in the Environment Variables section
-4. Click Deploy
-
-### 5. Local Development
-
-```bash
-# Add your API key to .env file first
-vercel dev
-```
-
-Visit `http://localhost:3000` to see the chat interface.
+Or push to GitHub and import in the [Vercel dashboard](https://vercel.com). Add `VENICE_API_KEY` as an environment variable.
 
 ## Project Structure
 
 ```
-venice-community-proxy/
-├── api/
-│   ├── chat.js          # POST /api/chat - main proxy endpoint (Edge Runtime)
-│   └── info.js          # GET /api/info - returns available models + capabilities
+openchat/
+├── app/
+│   ├── layout.tsx              # Root layout with providers
+│   ├── page.tsx                # Main page component
+│   ├── globals.css             # Tailwind + theme CSS variables
+│   └── api/
+│       ├── chat/route.ts       # POST — chat proxy with streaming
+│       ├── image/route.ts      # POST — image generation
+│       ├── upscale/route.ts    # POST — image upscaling
+│       ├── info/route.ts       # GET  — available models + capabilities
+│       └── og/route.tsx        # GET  — dynamic Open Graph preview image
+├── components/client/
+│   ├── ChatArea.tsx            # Message list + scroll management
+│   ├── Header.tsx              # Model dropdown, settings, theme toggle
+│   ├── InputArea.tsx           # Chat input orchestration
+│   ├── Message.tsx             # Message rendering, syntax highlighting, actions
+│   ├── QuickActions.tsx        # Quick action chips
+│   ├── Sidebar.tsx             # Search, date-grouped conversations, settings
+│   ├── SystemPromptSettings.tsx # Custom system prompt editor
+│   ├── ScheduledPrompt.tsx     # Scheduled daily prompt UI
+│   ├── TermsOfService.tsx      # ToS acceptance gate
+│   ├── WelcomeMessage.tsx      # Welcome screen with quick-action card grid
+│   └── input/
+│       ├── InputComposer.tsx   # Text input + button groups + stop control
+│       ├── InputAttachments.tsx # File/image attachment UI
+│       └── input-types.ts      # Attachment type definitions
+├── contexts/
+│   ├── AppContext.tsx           # App settings (model, web search, ToS)
+│   ├── ChatContext.tsx          # Conversations, messages, file uploads
+│   ├── ToastContext.tsx         # Toast notifications (error/success/info)
+│   └── ThemeContext.tsx         # Light/dark theme persistence
+├── hooks/
+│   └── useScheduledPrompt.ts   # Scheduled prompt timer + execution
+├── lib/
+│   ├── api-utils.ts            # CORS, rate limit, validation helpers (server)
+│   ├── chat-api.ts             # Client-side chat request wrapper
+│   ├── constants.ts            # App-wide constants and defaults
+│   ├── file-parser.ts          # CSV, PDF, XLSX parsing and file context builder
+│   ├── id-generator.ts         # Scoped UUID generation (conv-*, msg-*, img-*)
+│   ├── image-store.ts          # IndexedDB image blob storage
+│   ├── markdown.ts             # Markdown → HTML with citation links
+│   ├── rate-limit.ts           # Sliding-window per-IP rate limiter (server)
+│   ├── storage.ts              # localStorage typed getters/setters
+│   ├── streaming.ts            # SSE stream parser + citation normalizer
+│   ├── types.ts                # TypeScript interfaces
+│   ├── validation.ts           # Input validators (URL, role, data URL)
+│   ├── venice-models.ts        # Model fetching, price filtering, caching
+│   └── __tests__/              # Unit tests (vitest)
+├── e2e/                        # Playwright end-to-end tests
 ├── public/
-│   ├── index.html       # Chat UI (single-page app with multi-chat, themes, scheduled prompts)
-│   └── tos.html         # Terms of Service
+│   ├── tos.html                # Terms of Service page
+│   └── pdf.worker.min.mjs     # PDF.js worker for client-side PDF parsing
+├── vitest.config.ts            # Unit test config
+├── playwright.config.ts        # E2E test config
+├── tailwind.config.ts
+├── next.config.js
 ├── package.json
-├── vercel.json          # Vercel configuration
-├── .env.example         # Environment template
-└── README.md
+└── vercel.json                 # Vercel rewrites (/v1/* → /api/chat)
 ```
 
-## API Usage
+## API Reference
 
-### Chat Endpoint
+### `POST /api/chat` — Chat Completions
+
+Proxies to Venice's `/chat/completions` with validation and rate limiting.
 
 ```bash
-curl https://your-domain.vercel.app/api/chat \
+curl -X POST https://your-domain.vercel.app/api/chat \
   -H "Content-Type: application/json" \
   -H "X-TOS-Accepted: true" \
   -d '{
-    "model": "venice-uncensored",
+    "model": "zai-org-glm-5",
     "messages": [{"role": "user", "content": "Hello!"}],
     "stream": true,
     "enable_web_search": "auto"
   }'
 ```
 
-### Info Endpoint
+| Parameter           | Type    | Default  | Description                           |
+| ------------------- | ------- | -------- | ------------------------------------- |
+| `model`             | string  | required | Model ID (from `/api/info`)           |
+| `messages`          | array   | required | `[{role, content}]` (max 50 messages) |
+| `stream`            | boolean | `true`   | Enable SSE streaming                  |
+| `max_tokens`        | integer | `2048`   | Max response tokens (up to 4096)      |
+| `temperature`       | number  | `0.7`    | Sampling temperature (0–2)            |
+| `enable_web_search` | string  | `"auto"` | `"auto"`, `"on"`, or `"off"`          |
+| `system_prompt`     | string  | —        | Custom system prompt (max 4000 chars) |
+| `image_data_url`    | string  | —        | Base64 image for vision models        |
+
+### `POST /api/image` — Image Generation
 
 ```bash
-curl https://your-domain.vercel.app/api/info
+curl -X POST https://your-domain.vercel.app/api/image \
+  -H "Content-Type: application/json" \
+  -H "X-TOS-Accepted: true" \
+  -d '{"prompt": "A sunset over mountains", "model": "nano-banana-pro"}'
 ```
 
-Returns available models and their capabilities (web search, vision, reasoning, etc.).
+### `POST /api/upscale` — Image Upscaling
 
-### Available Models
+```bash
+curl -X POST https://your-domain.vercel.app/api/upscale \
+  -H "Content-Type: application/json" \
+  -H "X-TOS-Accepted: true" \
+  -d '{"image_data_url": "data:image/png;base64,...", "scale": 2}'
+```
 
-Models are dynamically loaded from Venice.ai's API and filtered by cost thresholds:
-- Max input price: $2.00 per 1M tokens
-- Max output price: $6.00 per 1M tokens
+### `GET /api/info` — Available Models
 
-Common models include:
-
-| Model | Description |
-|-------|-------------|
-| `venice-uncensored` | Venice's uncensored model (default) |
-| `llama-3.3-70b` | Meta's Llama 3.3 70B parameter model |
-| `deepseek-r1-distill-llama-70b` | DeepSeek R1 distilled to Llama 70B |
-| `dolphin-2.9.2-qwen2-72b` | Dolphin fine-tuned Qwen2 72B |
-
-### Request Parameters
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `model` | string | required | One of the allowed models |
-| `messages` | array | required | Array of message objects |
-| `stream` | boolean | `true` | Enable streaming responses |
-| `max_tokens` | number | `2048` | Maximum tokens (max 4096) |
-| `temperature` | number | `0.7` | Sampling temperature |
-| `enable_web_search` | string | `"auto"` | `"auto"`, `"on"`, or `"off"` |
+Returns all available text/image models, capabilities, and rate limit info.
 
 ### Required Headers
 
-| Header | Value | Description |
-|--------|-------|-------------|
-| `Content-Type` | `application/json` | Request content type |
-| `X-TOS-Accepted` | `true` | Acknowledge Terms of Service |
+| Header           | Value              | Description                  |
+| ---------------- | ------------------ | ---------------------------- |
+| `Content-Type`   | `application/json` | Request content type         |
+| `X-TOS-Accepted` | `true`             | Acknowledge Terms of Service |
 
 ### Response Headers
 
-| Header | Description |
-|--------|-------------|
-| `X-RateLimit-Remaining` | Requests remaining in current window |
-| `X-RateLimit-Limit` | Total requests allowed per window |
+| Header                  | Description                       |
+| ----------------------- | --------------------------------- |
+| `X-RateLimit-Remaining` | Requests remaining in window      |
+| `X-RateLimit-Limit`     | Total requests allowed per window |
+
+## Privacy Architecture
+
+| Data               | Stored?     | Where                | Duration         |
+| ------------------ | ----------- | -------------------- | ---------------- |
+| Prompts / Messages | No (server) | Browser localStorage | Until cleared    |
+| AI Responses       | No (server) | Browser localStorage | Until cleared    |
+| Images             | No (server) | Browser IndexedDB    | Until cleared    |
+| IP Addresses       | In-memory   | Server               | Until cold start |
+| API Key            | Server env  | Vercel secrets       | Persistent       |
+
+The proxy **never** logs, stores, or has access to conversation content. Requests are validated, forwarded to Venice, and the response is streamed back.
+
+## Testing
+
+```bash
+# Unit tests
+npm test                    # Run once
+npm run test:watch          # Watch mode
+npm run test:coverage       # With coverage report
+
+# End-to-end tests
+npx playwright test         # Run e2e tests
+npx playwright test --ui    # Interactive UI mode
+```
 
 ## Rate Limits
 
-- **20 requests per hour** per IP address
-- Rate limit resets on a rolling window
-- Exceeding the limit returns HTTP 429
-- Rate limit data is stored in-memory and resets on cold starts
+- **20 requests per hour** per IP address (rolling window)
+- Exceeding returns HTTP 429 with `Retry-After` header
+- In-memory tracking resets on cold starts / deployments
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `VENICE_API_KEY` | Yes | Your Venice.ai API key |
+| Variable              | Required | Description                                          |
+| --------------------- | -------- | ---------------------------------------------------- |
+| `VENICE_API_KEY`      | Yes      | Your Venice.ai API key                               |
+| `ALLOWED_ORIGIN`      | No       | CORS origin restriction (defaults to `*`)            |
+| `NEXT_PUBLIC_BASE_URL`| No       | Base URL for OG images (auto-detected on Vercel)     |
 
-## Getting a Venice API Key
-
-1. Go to [venice.ai](https://venice.ai)
-2. Create an account or sign in
-3. Navigate to API settings
-4. Generate a new API key
-
-## Architecture Notes
-
-### Edge Runtime
-
-The chat endpoint runs on Vercel's Edge Runtime (`runtime: 'edge'`), which provides:
-- Low latency globally
-- Streaming support
-- No cold start delays
-- Stateless execution (rate limits reset on new instances)
-
-### Streaming
-
-Responses are streamed directly from Venice.ai to the browser. The proxy pipes the response body through without buffering, enabling real-time token display.
-
-### Model Filtering
-
-Models are filtered by cost on first request and cached in memory. This ensures users can only access reasonably-priced models while keeping the list dynamic as Venice adds new models.
-
-## Known Issues
-
-### Code Quality
-- **Single-file architecture** - The entire frontend (~3800 lines) is in one HTML file
-- **No CSS/JS separation** - All styles and scripts are inline, preventing browser caching
-- **Duplicate CSS rules** - Some styles are repeated unnecessarily
-
-### UX/Accessibility
-- **Crowded header** - Too many controls visible at once on desktop
-- **Missing accessibility attributes** - No ARIA labels, landmarks, or live regions
-- **Limited keyboard navigation** - Focus states and shortcuts need improvement
-
-### Missing Features
-- No message editing or regeneration
-- No conversation search or export
-- No copy button for AI responses
-- No image/file upload support
-
-See [`public/open-issues.md`](public/open-issues.md) for a detailed breakdown.
-
-## Roadmap
-
-Potential future enhancements (contributions welcome!):
-
-- [ ] **Deep Search** - More comprehensive web search with multiple queries
-- [ ] **File Uploads** - Support for uploading documents and images
-- [ ] **User Accounts** - Optional authentication for cross-device sync
-- [ ] **Data Persistence** - Server-side storage option for conversations
-- [ ] **Full Context Mode** - Use all past chats as context for new conversations
-- [ ] **More Models** - Expand model selection and add custom model support
-- [ ] **Search API Options** - Alternative search providers and configurations
-- [ ] **Code Refactoring** - Split into separate CSS/JS files for maintainability
+Get a key at [venice.ai](https://venice.ai) → API settings.
 
 ## License
 
-MIT License - feel free to use this for your own projects!
+MIT License — feel free to use this for your own projects.
 
 ## Disclaimer
 
-This is a community project and is not affiliated with Venice.ai. The service is provided "as-is" with no guarantees. Users are responsible for all content they generate.
+This is a community project and is not affiliated with Venice.ai. The service is provided "as-is" with no guarantees.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions welcome! See [agents.md](agents.md) for codebase guide and conventions.
