@@ -33,3 +33,13 @@ build/
 .next/
 out/
 coverage/
+
+# TypeScript build cache
+tsconfig.tsbuildinfo
+
+# Playwright / test artifacts
+playwright-report/
+test-results/
+
+# Generated screenshots
+scripts/screenshots/
