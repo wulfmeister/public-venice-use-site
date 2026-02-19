@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useApp } from "@/contexts/AppContext";
 import { CONSTANTS } from "@/lib/constants";
-import { Sun, Moon, ChevronDown, Globe, Eye, Cpu, Settings } from "lucide-react";
+import { Sun, Moon, ChevronDown, Globe, Eye, Cpu, Settings, ImageIcon } from "lucide-react";
 
 export default function Header() {
   const { theme, toggle } = useTheme();
@@ -25,16 +25,21 @@ export default function Header() {
     setModelCapabilities,
   } = useApp();
 
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [textDropdownOpen, setTextDropdownOpen] = useState(false);
+  const [imageDropdownOpen, setImageDropdownOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const textDropdownRef = useRef<HTMLDivElement>(null);
+  const imageDropdownRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
+      if (textDropdownRef.current && !textDropdownRef.current.contains(e.target as Node)) {
+        setTextDropdownOpen(false);
+      }
+      if (imageDropdownRef.current && !imageDropdownRef.current.contains(e.target as Node)) {
+        setImageDropdownOpen(false);
       }
       if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
         setSettingsOpen(false);
@@ -147,70 +152,97 @@ export default function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-50 bg-[var(--glass-bg)] backdrop-blur-[16px] py-3 px-4 md:px-6 flex items-center justify-between gap-3 border-b-2 border-[var(--glass-border)] transition-all duration-300 ${
+      className={`sticky top-0 z-50 bg-[var(--glass-bg)] backdrop-blur-[16px] py-2.5 px-4 md:px-6 flex items-center gap-3 border-b-2 border-[var(--glass-border)] transition-all duration-300 ${
         sidebarCollapsed ? "" : "md:pl-[calc(1.5rem+17.5rem)]"
       }`}
     >
       {/* Left: Logo */}
-      <h1 className="font-ui text-xl font-semibold tracking-tight leading-none flex-shrink-0">
-        <span className="inline-flex flex-col items-start gap-0.5 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-secondary)] px-3 py-1.5 text-[var(--text-primary)] shadow-[0_6px_16px_rgba(0,0,0,0.25)] ring-1 ring-white/10">
-          <span className="font-bold">🌊 OpenChat</span>
-          <span className="text-[10px] text-[var(--text-secondary)] font-normal">
-            powered by Venice
-          </span>
-        </span>
+      <h1 className="font-ui text-lg font-semibold tracking-tight leading-none flex-shrink-0 mr-auto">
+        <span className="font-bold text-[var(--text-primary)]">🌊 OpenChat</span>
       </h1>
 
-      {/* Center: Model pill + dropdown */}
-      <div ref={dropdownRef} className="relative">
-        <button
-          type="button"
-          onClick={() => setDropdownOpen(!dropdownOpen)}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--shadow-light)] transition-all cursor-pointer"
-          aria-label="Select model"
-        >
-          <Cpu className="w-4 h-4 text-[var(--accent)]" />
-          <span className="max-w-[10rem] truncate">{formatModelName(selectedModel)}</span>
-          <ChevronDown className={`w-3.5 h-3.5 text-[var(--text-secondary)] transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+      {/* Center: Model selectors */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Text Model selector */}
+        <div ref={textDropdownRef} className="relative">
+          <button
+            type="button"
+            onClick={() => { setTextDropdownOpen(!textDropdownOpen); setImageDropdownOpen(false); }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)] text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--shadow-light)] transition-all cursor-pointer"
+            aria-label="Select text model"
+          >
+            <Cpu className="w-3.5 h-3.5 text-[var(--accent)] flex-shrink-0" />
+            <span className="max-w-[8rem] truncate hidden lg:inline">{formatModelName(selectedModel)}</span>
+            <ChevronDown className={`w-3 h-3 text-[var(--text-secondary)] transition-transform duration-200 ${textDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
 
-          {/* Rate limit indicator inline */}
-          <span className={`ml-1 text-xs font-semibold ${
-            rateLimitRemaining === 0 ? 'text-red-500 animate-pulse' :
-            rateLimitRemaining <= 5 ? 'text-red-500' :
-            rateLimitRemaining <= 15 ? 'text-amber-500' :
-            'text-emerald-500'
-          }`}>
-            {rateLimitRemaining === 0 ? '!' : rateLimitRemaining}
-          </span>
-        </button>
+          {textDropdownOpen && (
+            <div className="fixed inset-x-4 top-14 sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:w-72 mt-2 max-h-[60vh] overflow-y-auto rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl shadow-2xl z-50 animate-slide-down">
+              <div className="px-3 pt-3 pb-1">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Text Models</div>
+              </div>
+              <div className="px-1 pb-2">
+                {models.map((model) => (
+                  <button
+                    key={model}
+                    type="button"
+                    onClick={() => { setSelectedModel(model); setTextDropdownOpen(false); }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${
+                      model === selectedModel
+                        ? 'bg-[var(--shadow-light)] text-[var(--accent)] font-medium'
+                        : 'text-[var(--text-primary)] hover:bg-[var(--shadow-light)]'
+                    }`}
+                  >
+                    <span className="truncate flex-1">{formatModelName(model)}</span>
+                    {getCapabilityBadges(model)}
+                  </button>
+                ))}
+              </div>
 
-        {/* Custom dropdown panel */}
-        {dropdownOpen && (
-          <div className="absolute top-full left-0 mt-2 w-72 max-h-96 overflow-y-auto rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl shadow-2xl z-50 animate-slide-down">
-            {/* Text Models */}
-            <div className="px-3 pt-3 pb-1">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Text Models</div>
+              {/* Web Search Toggle */}
+              <div className="border-t border-[var(--border-color)] px-3 py-2.5">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <span className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
+                    <Globe className="w-3.5 h-3.5 text-[var(--accent)]" />
+                    Web Search
+                  </span>
+                  <div className={`relative w-9 h-5 rounded-full transition-colors duration-200 ${
+                    webSearchEnabled ? 'bg-[var(--accent)]' : 'bg-[var(--bg-tertiary)]'
+                  } ${!modelCapabilities[selectedModel]?.supportsWebSearch ? 'opacity-40' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={webSearchEnabled}
+                      onChange={(e) => setWebSearchEnabled(e.target.checked)}
+                      disabled={!modelCapabilities[selectedModel]?.supportsWebSearch}
+                      className="opacity-0 w-0 h-0"
+                    />
+                    <span
+                      className={`absolute top-0.5 left-0.5 h-4 w-4 bg-white rounded-full transition-transform duration-200 ${
+                        webSearchEnabled ? "translate-x-4" : "translate-x-0"
+                      }`}
+                    />
+                  </div>
+                </label>
+              </div>
             </div>
-            <div className="px-1 pb-2">
-              {models.map((model) => (
-                <button
-                  key={model}
-                  type="button"
-                  onClick={() => { setSelectedModel(model); setDropdownOpen(false); }}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${
-                    model === selectedModel
-                      ? 'bg-[var(--shadow-light)] text-[var(--accent)] font-medium'
-                      : 'text-[var(--text-primary)] hover:bg-[var(--shadow-light)]'
-                  }`}
-                >
-                  <span className="truncate flex-1">{formatModelName(model)}</span>
-                  {getCapabilityBadges(model)}
-                </button>
-              ))}
-            </div>
+          )}
+        </div>
 
-            {/* Image Models */}
-            <div className="border-t border-[var(--border-color)]">
+        {/* Image Model selector */}
+        <div ref={imageDropdownRef} className="relative">
+          <button
+            type="button"
+            onClick={() => { setImageDropdownOpen(!imageDropdownOpen); setTextDropdownOpen(false); }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)] text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--shadow-light)] transition-all cursor-pointer"
+            aria-label="Select image model"
+          >
+            <ImageIcon className="w-3.5 h-3.5 text-[var(--accent)] flex-shrink-0" />
+            <span className="max-w-[8rem] truncate hidden lg:inline">{formatModelName(selectedImageModel)}</span>
+            <ChevronDown className={`w-3 h-3 text-[var(--text-secondary)] transition-transform duration-200 ${imageDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {imageDropdownOpen && (
+            <div className="fixed inset-x-4 top-14 sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:w-56 mt-2 max-h-[60vh] overflow-y-auto rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl shadow-2xl z-50 animate-slide-down">
               <div className="px-3 pt-3 pb-1">
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Image Models</div>
               </div>
@@ -219,7 +251,7 @@ export default function Header() {
                   <button
                     key={model}
                     type="button"
-                    onClick={() => { setSelectedImageModel(model); setDropdownOpen(false); }}
+                    onClick={() => { setSelectedImageModel(model); setImageDropdownOpen(false); }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${
                       model === selectedImageModel
                         ? 'bg-[var(--shadow-light)] text-[var(--accent)] font-medium'
@@ -231,76 +263,30 @@ export default function Header() {
                 ))}
               </div>
             </div>
+          )}
+        </div>
 
-            {/* Web Search Toggle — inside dropdown */}
-            <div className="border-t border-[var(--border-color)] px-3 py-3">
-              <label className="flex items-center justify-between cursor-pointer">
-                <span className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
-                  <Globe className="w-4 h-4 text-[var(--accent)]" />
-                  Web Search
-                </span>
-                <div className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${
-                  webSearchEnabled ? 'bg-[var(--accent)]' : 'bg-[var(--bg-tertiary)]'
-                } ${!modelCapabilities[selectedModel]?.supportsWebSearch ? 'opacity-40' : ''}`}>
-                  <input
-                    type="checkbox"
-                    checked={webSearchEnabled}
-                    onChange={(e) => setWebSearchEnabled(e.target.checked)}
-                    disabled={!modelCapabilities[selectedModel]?.supportsWebSearch}
-                    className="opacity-0 w-0 h-0"
-                  />
-                  <span
-                    className={`absolute top-0.5 left-0.5 h-4 w-4 bg-white rounded-full transition-transform duration-200 ${
-                      webSearchEnabled ? "translate-x-5" : "translate-x-0"
-                    }`}
-                  />
-                </div>
-              </label>
-            </div>
-
-            {/* Rate Limit Bar */}
-            <div className="border-t border-[var(--border-color)] px-3 py-3">
-              <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] mb-1.5">
-                <span>Requests</span>
-                {rateLimitRemaining === 0 ? (
-                  <span className="text-red-500 font-semibold">Rate limited</span>
-                ) : (
-                  <span>
-                    <strong className={
-                      rateLimitRemaining <= 5 ? 'text-red-500' :
-                      rateLimitRemaining <= 15 ? 'text-amber-500' :
-                      'text-emerald-500'
-                    }>{rateLimitRemaining}</strong>/20
-                  </span>
-                )}
-              </div>
-              <div className="h-1.5 w-full rounded-full bg-[var(--bg-tertiary)] overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-300 ${
-                    rateLimitRemaining === 0 ? 'bg-red-500' :
-                    rateLimitRemaining <= 5 ? 'bg-red-500' :
-                    rateLimitRemaining <= 15 ? 'bg-amber-500' :
-                    'bg-emerald-500'
-                  }`}
-                  style={{ width: `${(rateLimitRemaining / 20) * 100}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Rate limit indicator */}
+        <span className={`text-xs font-semibold px-2 py-1 rounded-lg ${
+          rateLimitRemaining === 0 ? 'text-red-500 bg-red-500/10 animate-pulse' :
+          rateLimitRemaining <= 5 ? 'text-red-500 bg-red-500/10' :
+          rateLimitRemaining <= 15 ? 'text-amber-500 bg-amber-500/10' :
+          'text-emerald-500 bg-emerald-500/10'
+        }`}>
+          {rateLimitRemaining === 0 ? '!' : rateLimitRemaining}
+        </span>
       </div>
 
       {/* Right: Settings gear + Theme toggle */}
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {/* Settings popover with Terms link */}
+      <div className="flex items-center gap-1 flex-shrink-0">
         <div ref={settingsRef} className="relative">
           <button
             type="button"
             onClick={() => setSettingsOpen(!settingsOpen)}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--shadow-light)] transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--shadow-light)] transition-colors cursor-pointer"
             aria-label="Settings"
           >
-            <Settings className="w-4.5 h-4.5" />
+            <Settings className="w-4 h-4" />
           </button>
           {settingsOpen && (
             <div className="absolute top-full right-0 mt-2 w-40 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl shadow-2xl z-50 animate-slide-down py-1">
@@ -314,17 +300,16 @@ export default function Header() {
           )}
         </div>
 
-        {/* Theme Toggle */}
         <button
           type="button"
           onClick={toggle}
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--shadow-light)] transition-colors cursor-pointer"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--shadow-light)] transition-colors cursor-pointer"
           aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
         >
           {theme === "dark" ? (
-            <Moon className="w-4.5 h-4.5" />
+            <Moon className="w-4 h-4" />
           ) : (
-            <Sun className="w-4.5 h-4.5" />
+            <Sun className="w-4 h-4" />
           )}
         </button>
       </div>

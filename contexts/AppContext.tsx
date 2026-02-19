@@ -50,7 +50,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Hydrate from localStorage after mount (client-only)
   useEffect(() => {
     setTosAccepted(appStorage.getTosAccepted());
-    setSidebarCollapsed(appStorage.getSidebarCollapsed());
+    // Default sidebar to collapsed on mobile if no stored preference
+    const storedCollapsed = appStorage.getSidebarCollapsed();
+    const hasStoredPref = localStorage.getItem('sidebarCollapsed') !== null;
+    setSidebarCollapsed(hasStoredPref ? storedCollapsed : window.innerWidth < 1024);
     setWebSearchEnabled(appStorage.getWebSearchEnabled());
     setSelectedModel(appStorage.getSelectedModel());
     setSelectedImageModel(appStorage.getSelectedImageModel());
