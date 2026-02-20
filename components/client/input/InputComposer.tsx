@@ -158,7 +158,7 @@ export default function InputComposer({
               <button
                 type="button"
                 onClick={onStopGenerating}
-                className="bg-red-500/10 border border-red-500/30 text-red-500 w-12 h-12 rounded-2xl cursor-pointer flex items-center justify-center transition-all duration-100 hover:bg-red-500/20 hover:translate-y-[-1px] shadow-md"
+                className="bg-red-500/10 border border-red-500/30 text-red-500 w-10 h-10 rounded-xl cursor-pointer flex items-center justify-center transition-all duration-100 hover:bg-red-500/20 hover:translate-y-[-1px]"
                 aria-label="Stop generating"
               >
                 <Square className="w-4 h-4" />
@@ -172,10 +172,10 @@ export default function InputComposer({
                 disabled={
                   (!message.trim() && !imageAttachment) || !tosAccepted || isLoading
                 }
-                className="btn-gradient border-none text-[var(--button-text)] w-12 h-12 rounded-2xl cursor-pointer flex items-center justify-center transition-all duration-100 hover:translate-y-[-1px] hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                className="btn-gradient border-none text-[var(--button-text)] w-10 h-10 rounded-xl cursor-pointer flex items-center justify-center transition-all duration-100 hover:translate-y-[-1px] hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Send"
               >
-                <ArrowUp className="w-5 h-5" />
+                <ArrowUp className="w-4.5 h-4.5" />
               </button>
               <span className="hidden md:block text-[10px] text-[var(--text-secondary)] mt-0.5 leading-none">Send</span>
             </div>

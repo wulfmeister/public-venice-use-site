@@ -18,7 +18,7 @@ describe("createCorsHeaders", () => {
     expect(headers["Access-Control-Allow-Origin"]).toBe("*");
     expect(headers["Access-Control-Allow-Methods"]).toBe("GET, POST");
     expect(headers["Access-Control-Allow-Headers"]).toBe(
-      "Content-Type, X-TOS-Accepted",
+      "Content-Type, X-TOS-Accepted, X-Deployment-Password",
     );
   });
 });

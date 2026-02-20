@@ -12,7 +12,7 @@ export const createCorsHeaders = (methods: string[]) => {
   return {
     "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN || "*",
     "Access-Control-Allow-Methods": methods.join(", "),
-    "Access-Control-Allow-Headers": "Content-Type, X-TOS-Accepted",
+    "Access-Control-Allow-Headers": "Content-Type, X-TOS-Accepted, X-Deployment-Password",
   };
 };
 
@@ -37,6 +37,22 @@ export const handleOptions = (corsHeaders: HeadersInit) =>
     status: 204,
     headers: corsHeaders,
   });
+
+export const ensureDeploymentPassword = (
+  request: NextRequest,
+  corsHeaders: HeadersInit,
+) => {
+  const required = process.env.DEPLOYMENT_PASSWORD;
+  if (!required) return null;
+  const provided = request.headers.get("X-Deployment-Password");
+  if (provided !== required) {
+    return jsonResponse(
+      { error: "Invalid deployment password" },
+      { status: 401, corsHeaders },
+    );
+  }
+  return null;
+};
 
 export const ensureTosAccepted = (
   request: NextRequest,

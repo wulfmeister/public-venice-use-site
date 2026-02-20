@@ -161,6 +161,7 @@ export interface InfoResponse {
     required_header: string;
     tos_url: string;
   };
+  password_required: boolean;
 }
 
 export interface AppState {

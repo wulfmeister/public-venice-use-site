@@ -28,7 +28,7 @@ export function useScheduledPrompt() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isRunningRef = useRef(false);
   const { addMessageToConversation, updateMessageInConversation } = useChat();
-  const { selectedModel, webSearchEnabled, systemPrompt } = useApp();
+  const { selectedModel, webSearchEnabled, systemPrompt, deploymentPassword } = useApp();
 
   // Load settings from storage on mount
   useEffect(() => {
@@ -114,6 +114,7 @@ export function useScheduledPrompt() {
           messages,
           webSearchEnabled: webSearch,
           systemPrompt: systemPrompt || undefined,
+          deploymentPassword: deploymentPassword || undefined,
         });
 
         // Stream the response
@@ -180,6 +181,7 @@ export function useScheduledPrompt() {
       selectedModel,
       webSearchEnabled,
       systemPrompt,
+      deploymentPassword,
       addMessageToConversation,
       updateMessageInConversation,
       updateSettings,

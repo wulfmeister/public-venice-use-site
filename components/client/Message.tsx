@@ -23,7 +23,7 @@ import 'prismjs/components/prism-markdown';
 import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-c';
 import 'prismjs/components/prism-cpp';
-import { Bot, User, Copy, Check, RefreshCw } from 'lucide-react';
+import { Bot, User, Copy, Check, RefreshCw, Square } from 'lucide-react';
 
 interface MessageProps {
   message: MessageType;
@@ -216,6 +216,10 @@ export default function Message({ message, isLast }: MessageProps) {
     window.dispatchEvent(new CustomEvent('regenerateLastAssistant'));
   };
 
+  const handleStop = () => {
+    window.dispatchEvent(new CustomEvent('stopGenerating'));
+  };
+
   const isThinking = message.role === 'assistant' && message.content.trim() === 'Thinking...';
   const isGenerating = message.role === 'assistant' && message.content.trim() === 'Generating image...';
 
@@ -252,13 +256,24 @@ export default function Message({ message, isLast }: MessageProps) {
         </div>
         <div className="message-content flex-1 min-w-0 text-sm leading-relaxed">
           {isThinking ? (
-            <div className="flex items-center gap-3 py-2">
-              <div className="flex-1 space-y-2">
-                <div className="skeleton-bar h-3 rounded-md w-4/5" />
-                <div className="skeleton-bar h-3 rounded-md w-3/5" />
-                <div className="skeleton-bar h-3 rounded-md w-2/5" />
+            <>
+              <div className="flex items-center gap-3 py-2">
+                <div className="flex-1 space-y-2">
+                  <div className="skeleton-bar h-3 rounded-md w-4/5" />
+                  <div className="skeleton-bar h-3 rounded-md w-3/5" />
+                  <div className="skeleton-bar h-3 rounded-md w-2/5" />
+                </div>
               </div>
-            </div>
+              <button
+                type="button"
+                onClick={handleStop}
+                className="inline-flex items-center gap-1.5 mt-1 px-3 py-1.5 rounded-full text-xs font-medium text-red-500 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors cursor-pointer"
+                aria-label="Stop generating"
+              >
+                <Square className="w-3 h-3" />
+                Stop
+              </button>
+            </>
           ) : (
             <>
               {imageSrc && (

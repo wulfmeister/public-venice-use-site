@@ -8,6 +8,7 @@ import {
   clampMaxTokens,
   createCorsHeaders,
   ensureApiKey,
+  ensureDeploymentPassword,
   ensureTosAccepted,
   handleOptions,
   jsonResponse,
@@ -31,6 +32,9 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: NextRequest) {
+  const passwordError = ensureDeploymentPassword(request, corsHeaders);
+  if (passwordError) return passwordError;
+
   const tosError = ensureTosAccepted(request, corsHeaders);
   if (tosError) return tosError;
 

@@ -23,6 +23,8 @@ export default function Header() {
     setImageModels,
     modelCapabilities,
     setModelCapabilities,
+    setPasswordRequired,
+    setPasswordAccepted,
   } = useApp();
 
   const [textDropdownOpen, setTextDropdownOpen] = useState(false);
@@ -66,6 +68,12 @@ export default function Header() {
           setModels(availableModels);
           setImageModels(availableImageModels);
           setModelCapabilities(data.model_capabilities || {});
+          if (data.password_required !== undefined) {
+            setPasswordRequired(data.password_required);
+            if (!data.password_required) {
+              setPasswordAccepted(true);
+            }
+          }
           if (
             availableModels.length > 0 &&
             !availableModels.includes(selectedModel)
@@ -94,7 +102,7 @@ export default function Header() {
       }
     };
     fetchModels();
-  }, [selectedModel, selectedImageModel, setModels, setImageModels, setModelCapabilities, setSelectedModel, setSelectedImageModel]);
+  }, [selectedModel, selectedImageModel, setModels, setImageModels, setModelCapabilities, setSelectedModel, setSelectedImageModel, setPasswordRequired, setPasswordAccepted]);
 
   useEffect(() => {
     if (models.length > 0 && !models.includes(selectedModel)) {
@@ -267,14 +275,27 @@ export default function Header() {
         </div>
 
         {/* Rate limit indicator */}
-        <span className={`text-xs font-semibold px-2 py-1 rounded-lg ${
-          rateLimitRemaining === 0 ? 'text-red-500 bg-red-500/10 animate-pulse' :
-          rateLimitRemaining <= 5 ? 'text-red-500 bg-red-500/10' :
-          rateLimitRemaining <= 15 ? 'text-amber-500 bg-amber-500/10' :
-          'text-emerald-500 bg-emerald-500/10'
-        }`}>
-          {rateLimitRemaining === 0 ? '!' : rateLimitRemaining}
-        </span>
+        <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
+          <span className={`text-xs font-semibold px-2 py-1 rounded-lg ${
+            rateLimitRemaining === 0 ? 'text-red-500 bg-red-500/10 animate-pulse' :
+            rateLimitRemaining <= 5 ? 'text-red-500 bg-red-500/10' :
+            rateLimitRemaining <= 15 ? 'text-amber-500 bg-amber-500/10' :
+            'text-emerald-500 bg-emerald-500/10'
+          }`}>
+            {rateLimitRemaining === 0 ? 'Rate limited' : rateLimitRemaining}
+          </span>
+          <div className="w-full h-1 rounded-full bg-[var(--bg-tertiary)] overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${
+                rateLimitRemaining === 0 ? 'bg-red-500 animate-pulse' :
+                rateLimitRemaining <= 5 ? 'bg-red-500' :
+                rateLimitRemaining <= 15 ? 'bg-amber-500' :
+                'bg-emerald-500'
+              }`}
+              style={{ width: `${(rateLimitRemaining / CONSTANTS.RATE_LIMIT) * 100}%` }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Right: Settings gear + Theme toggle */}

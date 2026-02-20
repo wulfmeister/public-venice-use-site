@@ -6,12 +6,16 @@ import Sidebar from "@/components/client/Sidebar";
 import ChatArea from "@/components/client/ChatArea";
 import InputArea from "@/components/client/InputArea";
 import TermsOfService from "@/components/client/TermsOfService";
+import PasswordGate from "@/components/client/PasswordGate";
 
 export default function Home() {
   const { tosAccepted, sidebarCollapsed } = useApp();
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Password Gate (above ToS) */}
+      <PasswordGate />
+
       {/* Terms of Service Banner */}
       <TermsOfService />
 

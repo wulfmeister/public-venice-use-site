@@ -18,6 +18,9 @@ vi.mock('@/lib/storage', () => ({
     setSelectedImageModel: vi.fn(),
     getSystemPrompt: () => '',
     setSystemPrompt: vi.fn(),
+    getDeploymentPassword: () => '',
+    setDeploymentPassword: vi.fn(),
+    clearDeploymentPassword: vi.fn(),
   },
 }));
 

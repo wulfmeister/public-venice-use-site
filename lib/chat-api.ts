@@ -7,6 +7,7 @@ interface ChatRequestOptions {
   imageDataUrl?: string;
   systemPrompt?: string;
   signal?: AbortSignal;
+  deploymentPassword?: string;
 }
 
 export const readErrorDetails = async (response: Response) => {
@@ -27,14 +28,20 @@ export const sendChatRequest = async ({
   webSearchEnabled,
   imageDataUrl,
   systemPrompt,
-  signal
+  signal,
+  deploymentPassword
 }: ChatRequestOptions) => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-TOS-Accepted': 'true'
+  };
+  if (deploymentPassword) {
+    headers['X-Deployment-Password'] = deploymentPassword;
+  }
+
   const response = await fetch('/api/chat', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-TOS-Accepted': 'true'
-    },
+    headers,
     signal,
     body: JSON.stringify({
       model,

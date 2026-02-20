@@ -96,6 +96,7 @@ export async function GET() {
       required_header: "X-TOS-Accepted: true",
       tos_url: "/tos.html",
     },
+    password_required: !!process.env.DEPLOYMENT_PASSWORD,
   };
 
   return jsonResponse(payload, { corsHeaders });

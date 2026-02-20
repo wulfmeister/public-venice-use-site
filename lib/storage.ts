@@ -14,6 +14,7 @@ const STORAGE_KEYS = {
   SYSTEM_PROMPT: "customSystemPrompt",
   SCHEDULED_PROMPT: "scheduledPrompt",
   SCHEDULED_SECTION_COLLAPSED: "scheduledSectionCollapsed",
+  DEPLOYMENT_PASSWORD: "deploymentPassword",
 } as const;
 
 // Generic storage utilities
@@ -128,6 +129,13 @@ export const appStorage = {
     storage.get(STORAGE_KEYS.SYSTEM_PROMPT, "") ?? "",
   setSystemPrompt: (prompt: string): void =>
     storage.set(STORAGE_KEYS.SYSTEM_PROMPT, prompt),
+
+  getDeploymentPassword: (): string =>
+    storage.get(STORAGE_KEYS.DEPLOYMENT_PASSWORD, "") ?? "",
+  setDeploymentPassword: (pw: string): void =>
+    storage.set(STORAGE_KEYS.DEPLOYMENT_PASSWORD, pw),
+  clearDeploymentPassword: (): void =>
+    storage.remove(STORAGE_KEYS.DEPLOYMENT_PASSWORD),
 };
 
 export const scheduledPromptStorage = {

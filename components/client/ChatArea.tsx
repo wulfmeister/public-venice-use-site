@@ -9,7 +9,7 @@ import { ChevronDown } from 'lucide-react';
 
 export default function ChatArea() {
   const { conversations, currentId } = useChat();
-  const { tosAccepted } = useApp();
+  const { hydrated, tosAccepted } = useApp();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -37,12 +37,14 @@ export default function ChatArea() {
     }
   }, [conversations, currentId, isAtBottom]);
 
-  if (!tosAccepted) {
+  if (!hydrated || !tosAccepted) {
     return (
       <div className="flex-1 flex flex-col overflow-hidden bg-[var(--bg-primary)] transition-all duration-300">
-        <div className="flex-1 flex items-center justify-center p-6">
-          <WelcomeMessage variant="tos" />
-        </div>
+        {!hydrated ? null : (
+          <div className="flex-1 flex items-center justify-center p-6">
+            <WelcomeMessage variant="tos" />
+          </div>
+        )}
       </div>
     );
   }

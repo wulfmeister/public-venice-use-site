@@ -6,6 +6,7 @@ import { CONSTANTS } from '@/lib/constants';
 import { ModelCapabilities } from '@/lib/types';
 
 interface AppContextType {
+  hydrated: boolean;
   tosAccepted: boolean;
   acceptTos: () => void;
   rateLimitRemaining: number;
@@ -28,6 +29,13 @@ interface AppContextType {
   setModelCapabilities: (capabilities: Record<string, ModelCapabilities>) => void;
   systemPrompt: string;
   setSystemPrompt: (prompt: string) => void;
+  passwordRequired: boolean | null;
+  setPasswordRequired: (required: boolean) => void;
+  passwordAccepted: boolean;
+  setPasswordAccepted: (accepted: boolean) => void;
+  deploymentPassword: string;
+  submitPassword: (password: string) => Promise<boolean>;
+  resetPassword: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -35,6 +43,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: { children: React.ReactNode }) {
   // Initialize with server-safe defaults to avoid hydration mismatches.
   // Actual localStorage values are loaded in a useEffect below.
+  const [hydrated, setHydrated] = useState(false);
   const [tosAccepted, setTosAccepted] = useState(false);
   const [rateLimitRemaining, setRateLimitRemaining] = useState(20);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,6 +55,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [imageModels, setImageModels] = useState<string[]>([...CONSTANTS.IMAGE_MODELS]);
   const [modelCapabilities, setModelCapabilities] = useState<Record<string, ModelCapabilities>>({});
   const [systemPrompt, setSystemPrompt] = useState<string>('');
+  const [passwordRequired, setPasswordRequired] = useState<boolean | null>(null);
+  const [passwordAccepted, setPasswordAccepted] = useState(false);
+  const [deploymentPassword, setDeploymentPassword] = useState('');
 
   // Hydrate from localStorage after mount (client-only)
   useEffect(() => {
@@ -58,13 +70,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSelectedModel(appStorage.getSelectedModel());
     setSelectedImageModel(appStorage.getSelectedImageModel());
     setSystemPrompt(appStorage.getSystemPrompt());
+    // Optimistically restore cached deployment password
+    const cachedPw = appStorage.getDeploymentPassword();
+    if (cachedPw) {
+      setDeploymentPassword(cachedPw);
+      setPasswordAccepted(true);
+    }
+    setHydrated(true);
   }, []);
 
   // Save to storage when values change (skip the initial hydration render)
-  const hydrated = useRef(false);
+  const didMountRef = useRef(false);
   useEffect(() => {
-    if (!hydrated.current) {
-      hydrated.current = true;
+    if (!didMountRef.current) {
+      didMountRef.current = true;
       return;
     }
     appStorage.setTosAccepted(tosAccepted);
@@ -79,8 +98,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTosAccepted(true);
   };
 
+  const submitPassword = async (password: string): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-TOS-Accepted': 'true',
+          'X-Deployment-Password': password,
+        },
+        body: JSON.stringify({ model: '', messages: [{ role: 'user', content: 'ping' }] }),
+      });
+      if (res.status === 401) return false;
+      // Any other status means password check passed
+      setDeploymentPassword(password);
+      setPasswordAccepted(true);
+      appStorage.setDeploymentPassword(password);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const resetPassword = () => {
+    setDeploymentPassword('');
+    setPasswordAccepted(false);
+    appStorage.clearDeploymentPassword();
+  };
+
   return (
     <AppContext.Provider value={{
+      hydrated,
       tosAccepted,
       acceptTos,
       rateLimitRemaining,
@@ -102,7 +150,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       modelCapabilities,
       setModelCapabilities,
       systemPrompt,
-      setSystemPrompt
+      setSystemPrompt,
+      passwordRequired,
+      setPasswordRequired,
+      passwordAccepted,
+      setPasswordAccepted,
+      deploymentPassword,
+      submitPassword,
+      resetPassword
     }}>
       {children}
     </AppContext.Provider>

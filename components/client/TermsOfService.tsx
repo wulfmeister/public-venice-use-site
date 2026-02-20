@@ -5,7 +5,7 @@ import { useApp } from "@/contexts/AppContext";
 import { Waves } from "lucide-react";
 
 export default function TermsOfService() {
-  const { tosAccepted, acceptTos } = useApp();
+  const { hydrated, tosAccepted, acceptTos } = useApp();
   const dialogRef = useRef<HTMLDivElement>(null);
   const acceptBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -43,7 +43,7 @@ export default function TermsOfService() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [tosAccepted]);
 
-  if (tosAccepted) return null;
+  if (!hydrated || tosAccepted) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="tos-heading">

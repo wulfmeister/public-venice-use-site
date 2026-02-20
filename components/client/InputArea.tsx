@@ -38,6 +38,8 @@ export default function InputArea() {
     models,
     modelCapabilities,
     systemPrompt,
+    deploymentPassword,
+    resetPassword,
   } = useApp();
   const { showToast } = useToast();
 
@@ -331,6 +333,13 @@ export default function InputArea() {
     setIsLoading(false);
   }, [setIsLoading]);
 
+  // Listen for stop event from inline stop pill in Message
+  useEffect(() => {
+    const handleStop = () => cancelGeneration();
+    window.addEventListener('stopGenerating', handleStop);
+    return () => window.removeEventListener('stopGenerating', handleStop);
+  }, [cancelGeneration]);
+
   const sendMessage = async (
     userMessage: string,
     imageDataUrl?: string,
@@ -356,6 +365,7 @@ export default function InputArea() {
         imageDataUrl,
         systemPrompt,
         signal: controller.signal,
+        deploymentPassword: deploymentPassword || undefined,
       });
 
       syncRateLimit(response);
@@ -389,6 +399,11 @@ export default function InputArea() {
       if (error instanceof DOMException && error.name === "AbortError") {
         // User cancelled — partial content is already streamed via onContent
         return;
+      }
+      // Handle password rejection
+      if (error instanceof Error && error.message.includes("401")) {
+        resetPassword();
+        showToast("Password changed or expired. Please re-enter.", "error");
       }
       console.error("Error sending message:", error);
       if (placeholderId) {
@@ -430,16 +445,27 @@ export default function InputArea() {
     setIsLoading(true);
 
     try {
+      const imageHeaders: Record<string, string> = {
+        "Content-Type": "application/json",
+        "X-TOS-Accepted": "true",
+      };
+      if (deploymentPassword) {
+        imageHeaders["X-Deployment-Password"] = deploymentPassword;
+      }
+
       const response = await fetch("/api/image", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-TOS-Accepted": "true",
-        },
+        headers: imageHeaders,
         body: JSON.stringify({ prompt, model: selectedImageModel }),
       });
 
       syncRateLimit(response);
+
+      if (response.status === 401) {
+        resetPassword();
+        showToast("Password changed or expired. Please re-enter.", "error");
+        throw new Error("Deployment password rejected");
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -482,12 +508,17 @@ export default function InputArea() {
     setIsLoading(true);
 
     try {
+      const upscaleHeaders: Record<string, string> = {
+        "Content-Type": "application/json",
+        "X-TOS-Accepted": "true",
+      };
+      if (deploymentPassword) {
+        upscaleHeaders["X-Deployment-Password"] = deploymentPassword;
+      }
+
       const response = await fetch("/api/upscale", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-TOS-Accepted": "true",
-        },
+        headers: upscaleHeaders,
         body: JSON.stringify({
           image_data_url: imageAttachment.dataUrl,
           scale: upscaleScale,
@@ -496,6 +527,12 @@ export default function InputArea() {
       });
 
       syncRateLimit(response);
+
+      if (response.status === 401) {
+        resetPassword();
+        showToast("Password changed or expired. Please re-enter.", "error");
+        throw new Error("Deployment password rejected");
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
