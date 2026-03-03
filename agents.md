@@ -28,6 +28,8 @@ Next.js API Routes (server-side)
 - **Venice parameters**: Web search config goes inside `venice_parameters` in the request body to Venice, not as a top-level param. See `app/api/chat/route.ts`.
 - **Placeholder pattern**: In `lib/markdown.ts`, code blocks, inline code, and citation links are extracted into arrays and replaced with `\x00PLACEHOLDER{n}\x00` tokens before HTML escaping. This protects generated HTML from being mangled by the sanitization regexes. The tokens are restored at the end of `formatMessage()`.
 - **Model price filtering**: `lib/venice-models.ts` fetches the full model list from Venice and filters out models above the price thresholds in `constants.ts`. Results are cached for 5 minutes. On API failure, a hardcoded fallback list is used.
+- **Password gate**: If `DEPLOYMENT_PASSWORD` env var is set, every API route enforces `X-Deployment-Password` header validation via `ensureDeploymentPassword()` in `lib/api-utils.ts`. The client fetches `password_required` from `/api/info` on mount and shows `components/client/PasswordGate.tsx`. The boolean is cached to `localStorage` (`passwordRequired` key) so the gate renders immediately on next load without waiting for the info fetch. The accepted password is stored in `localStorage` (`deploymentPassword` key) and sent on every request. A "Lock instance" button in the Header settings dropdown calls `resetPassword()` to clear both values.
+- **Split rate limit tracking**: The server enforces per-endpoint limits (`RATE_LIMIT_CHAT=20`, `RATE_LIMIT_IMAGE=5`, `RATE_LIMIT_UPSCALE=5`). The client maintains three separate counters in `AppContext` (`rateLimitRemaining`, `imageRateLimitRemaining`, `upscaleRateLimitRemaining`), each updated from the `X-RateLimit-Remaining` response header by the corresponding request handler in `InputArea.tsx`. Both counters are shown in the Header.
 
 ## Testing
 
@@ -40,34 +42,40 @@ Next.js API Routes (server-side)
 
 ## File Organization
 
-| Directory | Purpose |
-|-----------|---------|
-| `app/` | Next.js pages and API routes |
-| `components/client/` | React UI components (all `'use client'`) |
-| `contexts/` | React Context providers (App, Chat, Theme, Toast) |
-| `hooks/` | Custom React hooks |
-| `lib/` | Shared utilities (types, storage, API helpers, parsers) |
-| `lib/__tests__/` | Unit tests |
-| `e2e/` | Playwright end-to-end tests |
-| `public/` | Static assets (tos.html) |
+| Directory            | Purpose                                                 |
+| -------------------- | ------------------------------------------------------- |
+| `app/`               | Next.js pages and API routes                            |
+| `components/client/` | React UI components (all `'use client'`)                |
+| `contexts/`          | React Context providers (App, Chat, Theme, Toast)       |
+| `hooks/`             | Custom React hooks                                      |
+| `lib/`               | Shared utilities (types, storage, API helpers, parsers) |
+| `lib/__tests__/`     | Unit tests                                              |
+| `e2e/`               | Playwright end-to-end tests                             |
+| `public/`            | Static assets (tos.html)                                |
 
 ## Venice API Integration
 
 All calls go through our proxy routes. The proxy:
+
 1. Validates the `X-TOS-Accepted: true` header
-2. Applies per-IP rate limiting (20 req/hour, in-memory)
+2. Applies per-endpoint per-IP rate limiting (chat: 20/hr, image: 5/hr, upscale: 5/hr — in-memory)
 3. Validates request body (model, messages, temperature, etc.)
 4. Forwards to Venice with `Authorization: Bearer $VENICE_API_KEY`
 5. Streams the response back to the client
 
 ### Endpoints
 
-| Our Route | Venice Endpoint | Purpose |
-|-----------|----------------|---------|
-| `POST /api/chat` | `/chat/completions` | Chat with streaming + web search |
-| `POST /api/image` | `/images/generations` | Image generation (OpenAI-compatible) |
-| `POST /api/upscale` | `/image/upscale` | Image upscaling (binary PNG response) |
-| `GET /api/info` | `/models` | List available models + capabilities |
+| Our Route           | Venice Endpoint       | Purpose                               |
+| ------------------- | --------------------- | ------------------------------------- |
+| `POST /api/chat`    | `/chat/completions`   | Chat with streaming + web search      |
+| `POST /api/image`   | `/images/generations` | Image generation (OpenAI-compatible)  |
+| `POST /api/upscale` | `/image/upscale`      | Image upscaling (binary PNG response) |
+| `GET /api/info`     | `/models`             | List available models + capabilities  |
+
+OpenAI-compatible aliases (via `next.config.js` rewrites):
+
+- `POST /v1/chat/completions` → `/api/chat`
+- `GET /v1/models` → `/api/info`
 
 ### Web Search
 
@@ -80,15 +88,15 @@ The toast notification system is provided by `ToastContext`.
 ### Usage
 
 ```tsx
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from "@/contexts/ToastContext";
 
 function MyComponent() {
   const { showToast } = useToast();
 
   // showToast(message: string, type?: 'error' | 'success' | 'info')
-  showToast('File uploaded', 'success');
-  showToast('Something went wrong', 'error');
-  showToast('FYI…', 'info');  // default type
+  showToast("File uploaded", "success");
+  showToast("Something went wrong", "error");
+  showToast("FYI…", "info"); // default type
 }
 ```
 
@@ -107,22 +115,26 @@ Wrap your app with `<ToastProvider>` (already done in `app/layout.tsx`). Compone
 ## Common Tasks
 
 ### Adding a new API route
+
 1. Create `app/api/<name>/route.ts`
 2. Use `ensureTosAccepted`, `applyRateLimit`, `ensureApiKey` from `lib/api-utils.ts`
 3. Forward to Venice with the API key from `process.env.VENICE_API_KEY`
 
 ### Adding a new setting
+
 1. Add a key to `STORAGE_KEYS` and a getter/setter pair to `appStorage` in `lib/storage.ts`
 2. Add state + a one-line `useEffect` persistence hook in `contexts/AppContext.tsx`
 3. Create UI in a sidebar component
 4. Wire into the relevant API call chain
 
 ### Adding tests
+
 - Unit: Create `lib/__tests__/<module>.test.ts`, use vitest
 - E2E: Add to `e2e/app.spec.ts`, use Playwright `page` and `request` fixtures
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `VENICE_API_KEY` | Yes | Venice.ai API key for proxied requests |
+| Variable              | Required | Description                               |
+| --------------------- | -------- | ----------------------------------------- |
+| `VENICE_API_KEY`      | Yes      | Venice.ai API key for proxied requests    |
+| `DEPLOYMENT_PASSWORD` | No       | Require a password to access the instance |

@@ -1,10 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { AppProvider, useApp } from '../AppContext';
-import { CONSTANTS } from '@/lib/constants';
+import { describe, it, expect, vi } from "vitest";
+import { renderHook, act } from "@testing-library/react";
+import { AppProvider, useApp } from "../AppContext";
+import { CONSTANTS } from "@/lib/constants";
 
 // Mock storage so we don't depend on real localStorage side-effects during init
-vi.mock('@/lib/storage', () => ({
+vi.mock("@/lib/storage", () => ({
   appStorage: {
     getTosAccepted: () => false,
     setTosAccepted: vi.fn(),
@@ -16,11 +16,13 @@ vi.mock('@/lib/storage', () => ({
     setSelectedModel: vi.fn(),
     getSelectedImageModel: () => CONSTANTS.DEFAULT_IMAGE_MODEL,
     setSelectedImageModel: vi.fn(),
-    getSystemPrompt: () => '',
+    getSystemPrompt: () => "",
     setSystemPrompt: vi.fn(),
-    getDeploymentPassword: () => '',
+    getDeploymentPassword: () => "",
     setDeploymentPassword: vi.fn(),
     clearDeploymentPassword: vi.fn(),
+    getPasswordRequired: () => null,
+    setPasswordRequired: vi.fn(),
   },
 }));
 
@@ -28,39 +30,41 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
   <AppProvider>{children}</AppProvider>
 );
 
-describe('AppContext', () => {
-  it('provides default state values', () => {
+describe("AppContext", () => {
+  it("provides default state values", () => {
     const { result } = renderHook(() => useApp(), { wrapper });
 
     expect(result.current.selectedModel).toBe(CONSTANTS.DEFAULT_MODEL);
-    expect(result.current.selectedImageModel).toBe(CONSTANTS.DEFAULT_IMAGE_MODEL);
+    expect(result.current.selectedImageModel).toBe(
+      CONSTANTS.DEFAULT_IMAGE_MODEL,
+    );
     expect(result.current.webSearchEnabled).toBe(true);
     expect(result.current.isLoading).toBe(false);
     expect(result.current.rateLimitRemaining).toBe(20);
-    expect(result.current.systemPrompt).toBe('');
+    expect(result.current.systemPrompt).toBe("");
   });
 
-  it('setSelectedModel updates state', () => {
+  it("setSelectedModel updates state", () => {
     const { result } = renderHook(() => useApp(), { wrapper });
 
     act(() => {
-      result.current.setSelectedModel('test-model');
+      result.current.setSelectedModel("test-model");
     });
 
-    expect(result.current.selectedModel).toBe('test-model');
+    expect(result.current.selectedModel).toBe("test-model");
   });
 
-  it('setSystemPrompt updates state', () => {
+  it("setSystemPrompt updates state", () => {
     const { result } = renderHook(() => useApp(), { wrapper });
 
     act(() => {
-      result.current.setSystemPrompt('Be helpful');
+      result.current.setSystemPrompt("Be helpful");
     });
 
-    expect(result.current.systemPrompt).toBe('Be helpful');
+    expect(result.current.systemPrompt).toBe("Be helpful");
   });
 
-  it('setRateLimitRemaining updates state', () => {
+  it("setRateLimitRemaining updates state", () => {
     const { result } = renderHook(() => useApp(), { wrapper });
 
     act(() => {
@@ -70,12 +74,46 @@ describe('AppContext', () => {
     expect(result.current.rateLimitRemaining).toBe(15);
   });
 
-  it('throws when useApp is used outside AppProvider', () => {
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  it("imageRateLimitRemaining defaults to RATE_LIMIT_IMAGE", () => {
+    const { result } = renderHook(() => useApp(), { wrapper });
+    expect(result.current.imageRateLimitRemaining).toBe(
+      CONSTANTS.RATE_LIMIT_IMAGE,
+    );
+  });
+
+  it("setImageRateLimitRemaining updates state", () => {
+    const { result } = renderHook(() => useApp(), { wrapper });
+
+    act(() => {
+      result.current.setImageRateLimitRemaining(3);
+    });
+
+    expect(result.current.imageRateLimitRemaining).toBe(3);
+  });
+
+  it("upscaleRateLimitRemaining defaults to RATE_LIMIT_UPSCALE", () => {
+    const { result } = renderHook(() => useApp(), { wrapper });
+    expect(result.current.upscaleRateLimitRemaining).toBe(
+      CONSTANTS.RATE_LIMIT_UPSCALE,
+    );
+  });
+
+  it("setUpscaleRateLimitRemaining updates state", () => {
+    const { result } = renderHook(() => useApp(), { wrapper });
+
+    act(() => {
+      result.current.setUpscaleRateLimitRemaining(2);
+    });
+
+    expect(result.current.upscaleRateLimitRemaining).toBe(2);
+  });
+
+  it("throws when useApp is used outside AppProvider", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     expect(() => {
       renderHook(() => useApp());
-    }).toThrow('useApp must be used within an AppProvider');
+    }).toThrow("useApp must be used within an AppProvider");
 
     spy.mockRestore();
   });

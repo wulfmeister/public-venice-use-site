@@ -1,9 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import {
   createCorsHeaders,
   jsonResponse,
   handleOptions,
   ensureTosAccepted,
+  ensureDeploymentPassword,
   ensureApiKey,
   parseJsonBody,
   buildRateLimitHeaders,
@@ -87,6 +88,58 @@ describe("ensureTosAccepted", () => {
     expect(result!.status).toBe(403);
     const body = await result!.json();
     expect(body.error).toBe("Terms of Service not accepted");
+  });
+});
+
+describe("ensureDeploymentPassword", () => {
+  const cors = createCorsHeaders(["POST"]);
+
+  afterEach(() => {
+    delete process.env.DEPLOYMENT_PASSWORD;
+  });
+
+  it("returns null when DEPLOYMENT_PASSWORD is not set", () => {
+    delete process.env.DEPLOYMENT_PASSWORD;
+    const request = {
+      headers: { get: () => null },
+    } as unknown as NextRequest;
+    expect(ensureDeploymentPassword(request, cors)).toBeNull();
+  });
+
+  it("returns null when correct password is provided", () => {
+    process.env.DEPLOYMENT_PASSWORD = "secret123";
+    const request = {
+      headers: {
+        get: (name: string) =>
+          name === "X-Deployment-Password" ? "secret123" : null,
+      },
+    } as unknown as NextRequest;
+    expect(ensureDeploymentPassword(request, cors)).toBeNull();
+  });
+
+  it("returns 401 when wrong password is provided", async () => {
+    process.env.DEPLOYMENT_PASSWORD = "secret123";
+    const request = {
+      headers: {
+        get: (name: string) =>
+          name === "X-Deployment-Password" ? "wrongpassword" : null,
+      },
+    } as unknown as NextRequest;
+    const result = ensureDeploymentPassword(request, cors);
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe(401);
+    const body = await result!.json();
+    expect(body.error).toBe("Invalid deployment password");
+  });
+
+  it("returns 401 when no password header is provided but one is required", async () => {
+    process.env.DEPLOYMENT_PASSWORD = "secret123";
+    const request = {
+      headers: { get: () => null },
+    } as unknown as NextRequest;
+    const result = ensureDeploymentPassword(request, cors);
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe(401);
   });
 });
 

@@ -30,8 +30,9 @@ A free, privacy-focused AI chat app powered by Venice.ai with a built-in Next.js
 - **Streaming Responses** — See AI responses as they generate in real-time
 - **Modern UI** — Shimmer loading skeletons, glassmorphism header, gradient welcome screen with quick-action cards
 - **Link Previews** — Dynamic Open Graph image generation for rich Slack/iMessage/social previews
-- **Rate Limiting** — 20 requests per hour per IP with progressive color indicator (green → amber → red)
-- **OpenAI-Compatible Endpoint** — Use as a drop-in Venice proxy at `/v1/chat/completions`
+- **Rate Limiting** — Per-endpoint limits (20 chat / 5 image / 5 upscale per hour per IP) with per-type indicators (green → amber → red)
+- **OpenAI-Compatible Endpoints** — Use as a drop-in Venice proxy at `/v1/chat/completions` and `/v1/models`
+- **Password Protection** — Optionally require a deployment password via `DEPLOYMENT_PASSWORD` env var; gate is rendered immediately from cached state with no flicker
 
 ## Application State Machine
 
@@ -196,7 +197,7 @@ openchat/
 ├── tailwind.config.ts
 ├── next.config.js
 ├── package.json
-└── vercel.json                 # Vercel rewrites (/v1/* → /api/chat)
+└── vercel.json                 # Vercel rewrites (/v1/chat/completions → /api/chat, /v1/models → /api/info)
 ```
 
 ## API Reference
@@ -291,17 +292,24 @@ npx playwright test --ui    # Interactive UI mode
 
 ## Rate Limits
 
-- **20 requests per hour** per IP address (rolling window)
-- Exceeding returns HTTP 429 with `Retry-After` header
-- In-memory tracking resets on cold starts / deployments
+Per-endpoint sliding-window limits, tracked independently in the UI:
+
+| Endpoint       | Limit  | Window |
+| -------------- | ------ | ------ |
+| `/api/chat`    | 20 req | 1 hour |
+| `/api/image`   | 5 req  | 1 hour |
+| `/api/upscale` | 5 req  | 1 hour |
+
+Exceeding any limit returns HTTP 429 with `Retry-After` header. Counters are in-memory and reset on cold starts / redeployments.
 
 ## Environment Variables
 
-| Variable              | Required | Description                                          |
-| --------------------- | -------- | ---------------------------------------------------- |
-| `VENICE_API_KEY`      | Yes      | Your Venice.ai API key                               |
-| `ALLOWED_ORIGIN`      | No       | CORS origin restriction (defaults to `*`)            |
-| `NEXT_PUBLIC_BASE_URL`| No       | Base URL for OG images (auto-detected on Vercel)     |
+| Variable               | Required | Description                                                               |
+| ---------------------- | -------- | ------------------------------------------------------------------------- |
+| `VENICE_API_KEY`       | Yes      | Your Venice.ai API key                                                    |
+| `DEPLOYMENT_PASSWORD`  | No       | Require a password to access the instance (leave blank for public access) |
+| `ALLOWED_ORIGIN`       | No       | CORS origin restriction (defaults to `*`)                                 |
+| `NEXT_PUBLIC_BASE_URL` | No       | Base URL for OG images (auto-detected on Vercel)                          |
 
 Get a key at [venice.ai](https://venice.ai) → API settings.
 

@@ -6,13 +6,16 @@ let corsWarningLogged = false;
 
 export const createCorsHeaders = (methods: string[]) => {
   if (!process.env.ALLOWED_ORIGIN && !corsWarningLogged) {
-    console.warn("ALLOWED_ORIGIN is not set — CORS is open to all origins. Set ALLOWED_ORIGIN in production.");
+    console.warn(
+      "ALLOWED_ORIGIN is not set — CORS is open to all origins. Set ALLOWED_ORIGIN in production.",
+    );
     corsWarningLogged = true;
   }
   return {
     "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN || "*",
     "Access-Control-Allow-Methods": methods.join(", "),
-    "Access-Control-Allow-Headers": "Content-Type, X-TOS-Accepted, X-Deployment-Password",
+    "Access-Control-Allow-Headers":
+      "Content-Type, X-TOS-Accepted, X-Deployment-Password",
   };
 };
 
@@ -110,7 +113,7 @@ export const applyRateLimit = (
   request: NextRequest,
   corsHeaders: HeadersInit,
 ) => {
-  const result = checkRateLimit(request);
+  const result = checkRateLimit(request, { endpoint: "chat" });
   if (!result.allowed) {
     return {
       error: jsonResponse(
@@ -138,7 +141,10 @@ export const applyImageRateLimit = (
   request: NextRequest,
   corsHeaders: HeadersInit,
 ) => {
-  const result = checkRateLimit(request, { limit: CONSTANTS.RATE_LIMIT_IMAGE });
+  const result = checkRateLimit(request, {
+    limit: CONSTANTS.RATE_LIMIT_IMAGE,
+    endpoint: "image",
+  });
   if (!result.allowed) {
     return {
       error: jsonResponse(
@@ -168,6 +174,7 @@ export const applyUpscaleRateLimit = (
 ) => {
   const result = checkRateLimit(request, {
     limit: CONSTANTS.RATE_LIMIT_UPSCALE,
+    endpoint: "upscale",
   });
   if (!result.allowed) {
     return {

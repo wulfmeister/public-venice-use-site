@@ -33,7 +33,7 @@ export const CONSTANTS = {
   IMAGE_MODELS: ["nano-banana-pro", "venice-sd35", "seedream-v4", "upscaler"],
 
   // Chat
-  CHAT_CONTEXT_LIMIT: 5,
+  CHAT_CONTEXT_LIMIT: 20,
   MAX_CHAT_MESSAGES: 50,
   MAX_CHAT_MESSAGE_LENGTH: 8000,
 

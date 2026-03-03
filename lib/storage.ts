@@ -15,6 +15,7 @@ const STORAGE_KEYS = {
   SCHEDULED_PROMPT: "scheduledPrompt",
   SCHEDULED_SECTION_COLLAPSED: "scheduledSectionCollapsed",
   DEPLOYMENT_PASSWORD: "deploymentPassword",
+  PASSWORD_REQUIRED: "passwordRequired",
 } as const;
 
 // Generic storage utilities
@@ -136,6 +137,13 @@ export const appStorage = {
     storage.set(STORAGE_KEYS.DEPLOYMENT_PASSWORD, pw),
   clearDeploymentPassword: (): void =>
     storage.remove(STORAGE_KEYS.DEPLOYMENT_PASSWORD),
+
+  getPasswordRequired: (): boolean | null => {
+    const val = storage.get<boolean>(STORAGE_KEYS.PASSWORD_REQUIRED, undefined);
+    return val !== undefined ? val : null;
+  },
+  setPasswordRequired: (required: boolean): void =>
+    storage.set(STORAGE_KEYS.PASSWORD_REQUIRED, required),
 };
 
 export const scheduledPromptStorage = {

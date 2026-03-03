@@ -4,7 +4,16 @@ import { useEffect, useState, useRef } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useApp } from "@/contexts/AppContext";
 import { CONSTANTS } from "@/lib/constants";
-import { Sun, Moon, ChevronDown, Globe, Eye, Cpu, Settings, ImageIcon } from "lucide-react";
+import {
+  Sun,
+  Moon,
+  ChevronDown,
+  Globe,
+  Eye,
+  Cpu,
+  Settings,
+  ImageIcon,
+} from "lucide-react";
 
 export default function Header() {
   const { theme, toggle } = useTheme();
@@ -14,6 +23,7 @@ export default function Header() {
     selectedImageModel,
     setSelectedImageModel,
     rateLimitRemaining,
+    imageRateLimitRemaining,
     webSearchEnabled,
     setWebSearchEnabled,
     sidebarCollapsed,
@@ -25,6 +35,9 @@ export default function Header() {
     setModelCapabilities,
     setPasswordRequired,
     setPasswordAccepted,
+    passwordRequired,
+    passwordAccepted,
+    resetPassword,
   } = useApp();
 
   const [textDropdownOpen, setTextDropdownOpen] = useState(false);
@@ -37,13 +50,22 @@ export default function Header() {
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (textDropdownRef.current && !textDropdownRef.current.contains(e.target as Node)) {
+      if (
+        textDropdownRef.current &&
+        !textDropdownRef.current.contains(e.target as Node)
+      ) {
         setTextDropdownOpen(false);
       }
-      if (imageDropdownRef.current && !imageDropdownRef.current.contains(e.target as Node)) {
+      if (
+        imageDropdownRef.current &&
+        !imageDropdownRef.current.contains(e.target as Node)
+      ) {
         setImageDropdownOpen(false);
       }
-      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+      if (
+        settingsRef.current &&
+        !settingsRef.current.contains(e.target as Node)
+      ) {
         setSettingsOpen(false);
       }
     };
@@ -102,7 +124,17 @@ export default function Header() {
       }
     };
     fetchModels();
-  }, [selectedModel, selectedImageModel, setModels, setImageModels, setModelCapabilities, setSelectedModel, setSelectedImageModel, setPasswordRequired, setPasswordAccepted]);
+  }, [
+    selectedModel,
+    selectedImageModel,
+    setModels,
+    setImageModels,
+    setModelCapabilities,
+    setSelectedModel,
+    setSelectedImageModel,
+    setPasswordRequired,
+    setPasswordAccepted,
+  ]);
 
   useEffect(() => {
     if (models.length > 0 && !models.includes(selectedModel)) {
@@ -145,12 +177,18 @@ export default function Header() {
     return (
       <span className="flex items-center gap-1 ml-auto">
         {caps.supportsVision && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--shadow-light)] text-[var(--accent)]" title="Vision">
+          <span
+            className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--shadow-light)] text-[var(--accent)]"
+            title="Vision"
+          >
             <Eye className="w-3 h-3 inline" />
           </span>
         )}
         {caps.supportsWebSearch && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--shadow-light)] text-[var(--accent)]" title="Web Search">
+          <span
+            className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--shadow-light)] text-[var(--accent)]"
+            title="Web Search"
+          >
             <Globe className="w-3 h-3 inline" />
           </span>
         )}
@@ -166,7 +204,9 @@ export default function Header() {
     >
       {/* Left: Logo */}
       <h1 className="font-ui text-lg font-semibold tracking-tight leading-none flex-shrink-0 mr-auto">
-        <span className="font-bold text-[var(--text-primary)]">🌊 OpenChat</span>
+        <span className="font-bold text-[var(--text-primary)]">
+          🌊 OpenChat
+        </span>
       </h1>
 
       {/* Center: Model selectors */}
@@ -175,33 +215,47 @@ export default function Header() {
         <div ref={textDropdownRef} className="relative">
           <button
             type="button"
-            onClick={() => { setTextDropdownOpen(!textDropdownOpen); setImageDropdownOpen(false); }}
+            onClick={() => {
+              setTextDropdownOpen(!textDropdownOpen);
+              setImageDropdownOpen(false);
+            }}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)] text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--shadow-light)] transition-all cursor-pointer"
             aria-label="Select text model"
           >
             <Cpu className="w-3.5 h-3.5 text-[var(--accent)] flex-shrink-0" />
-            <span className="max-w-[8rem] truncate hidden lg:inline">{formatModelName(selectedModel)}</span>
-            <ChevronDown className={`w-3 h-3 text-[var(--text-secondary)] transition-transform duration-200 ${textDropdownOpen ? 'rotate-180' : ''}`} />
+            <span className="max-w-[8rem] truncate hidden lg:inline">
+              {formatModelName(selectedModel)}
+            </span>
+            <ChevronDown
+              className={`w-3 h-3 text-[var(--text-secondary)] transition-transform duration-200 ${textDropdownOpen ? "rotate-180" : ""}`}
+            />
           </button>
 
           {textDropdownOpen && (
             <div className="fixed inset-x-4 top-14 sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:w-72 mt-2 max-h-[60vh] overflow-y-auto rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl shadow-2xl z-50 animate-slide-down">
               <div className="px-3 pt-3 pb-1">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Text Models</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                  Text Models
+                </div>
               </div>
               <div className="px-1 pb-2">
                 {models.map((model) => (
                   <button
                     key={model}
                     type="button"
-                    onClick={() => { setSelectedModel(model); setTextDropdownOpen(false); }}
+                    onClick={() => {
+                      setSelectedModel(model);
+                      setTextDropdownOpen(false);
+                    }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${
                       model === selectedModel
-                        ? 'bg-[var(--shadow-light)] text-[var(--accent)] font-medium'
-                        : 'text-[var(--text-primary)] hover:bg-[var(--shadow-light)]'
+                        ? "bg-[var(--shadow-light)] text-[var(--accent)] font-medium"
+                        : "text-[var(--text-primary)] hover:bg-[var(--shadow-light)]"
                     }`}
                   >
-                    <span className="truncate flex-1">{formatModelName(model)}</span>
+                    <span className="truncate flex-1">
+                      {formatModelName(model)}
+                    </span>
                     {getCapabilityBadges(model)}
                   </button>
                 ))}
@@ -214,14 +268,20 @@ export default function Header() {
                     <Globe className="w-3.5 h-3.5 text-[var(--accent)]" />
                     Web Search
                   </span>
-                  <div className={`relative w-9 h-5 rounded-full transition-colors duration-200 ${
-                    webSearchEnabled ? 'bg-[var(--accent)]' : 'bg-[var(--bg-tertiary)]'
-                  } ${!modelCapabilities[selectedModel]?.supportsWebSearch ? 'opacity-40' : ''}`}>
+                  <div
+                    className={`relative w-9 h-5 rounded-full transition-colors duration-200 ${
+                      webSearchEnabled
+                        ? "bg-[var(--accent)]"
+                        : "bg-[var(--bg-tertiary)]"
+                    } ${!modelCapabilities[selectedModel]?.supportsWebSearch ? "opacity-40" : ""}`}
+                  >
                     <input
                       type="checkbox"
                       checked={webSearchEnabled}
                       onChange={(e) => setWebSearchEnabled(e.target.checked)}
-                      disabled={!modelCapabilities[selectedModel]?.supportsWebSearch}
+                      disabled={
+                        !modelCapabilities[selectedModel]?.supportsWebSearch
+                      }
                       className="opacity-0 w-0 h-0"
                     />
                     <span
@@ -240,33 +300,47 @@ export default function Header() {
         <div ref={imageDropdownRef} className="relative">
           <button
             type="button"
-            onClick={() => { setImageDropdownOpen(!imageDropdownOpen); setTextDropdownOpen(false); }}
+            onClick={() => {
+              setImageDropdownOpen(!imageDropdownOpen);
+              setTextDropdownOpen(false);
+            }}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)] text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--shadow-light)] transition-all cursor-pointer"
             aria-label="Select image model"
           >
             <ImageIcon className="w-3.5 h-3.5 text-[var(--accent)] flex-shrink-0" />
-            <span className="max-w-[8rem] truncate hidden lg:inline">{formatModelName(selectedImageModel)}</span>
-            <ChevronDown className={`w-3 h-3 text-[var(--text-secondary)] transition-transform duration-200 ${imageDropdownOpen ? 'rotate-180' : ''}`} />
+            <span className="max-w-[8rem] truncate hidden lg:inline">
+              {formatModelName(selectedImageModel)}
+            </span>
+            <ChevronDown
+              className={`w-3 h-3 text-[var(--text-secondary)] transition-transform duration-200 ${imageDropdownOpen ? "rotate-180" : ""}`}
+            />
           </button>
 
           {imageDropdownOpen && (
             <div className="fixed inset-x-4 top-14 sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:w-56 mt-2 max-h-[60vh] overflow-y-auto rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl shadow-2xl z-50 animate-slide-down">
               <div className="px-3 pt-3 pb-1">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Image Models</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                  Image Models
+                </div>
               </div>
               <div className="px-1 pb-2">
                 {imageModels.map((model) => (
                   <button
                     key={model}
                     type="button"
-                    onClick={() => { setSelectedImageModel(model); setImageDropdownOpen(false); }}
+                    onClick={() => {
+                      setSelectedImageModel(model);
+                      setImageDropdownOpen(false);
+                    }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${
                       model === selectedImageModel
-                        ? 'bg-[var(--shadow-light)] text-[var(--accent)] font-medium'
-                        : 'text-[var(--text-primary)] hover:bg-[var(--shadow-light)]'
+                        ? "bg-[var(--shadow-light)] text-[var(--accent)] font-medium"
+                        : "text-[var(--text-primary)] hover:bg-[var(--shadow-light)]"
                     }`}
                   >
-                    <span className="truncate flex-1">{formatModelName(model)}</span>
+                    <span className="truncate flex-1">
+                      {formatModelName(model)}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -274,26 +348,43 @@ export default function Header() {
           )}
         </div>
 
-        {/* Rate limit indicator */}
-        <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
-          <span className={`text-xs font-semibold px-2 py-1 rounded-lg ${
-            rateLimitRemaining === 0 ? 'text-red-500 bg-red-500/10 animate-pulse' :
-            rateLimitRemaining <= 5 ? 'text-red-500 bg-red-500/10' :
-            rateLimitRemaining <= 15 ? 'text-amber-500 bg-amber-500/10' :
-            'text-emerald-500 bg-emerald-500/10'
-          }`}>
-            {rateLimitRemaining === 0 ? 'Rate limited' : rateLimitRemaining}
-          </span>
-          <div className="w-full h-1 rounded-full bg-[var(--bg-tertiary)] overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-300 ${
-                rateLimitRemaining === 0 ? 'bg-red-500 animate-pulse' :
-                rateLimitRemaining <= 5 ? 'bg-red-500' :
-                rateLimitRemaining <= 15 ? 'bg-amber-500' :
-                'bg-emerald-500'
+        {/* Rate limit indicators */}
+        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] text-[var(--text-secondary)]">
+              chat
+            </span>
+            <span
+              className={`text-xs font-semibold px-2 py-0.5 rounded-lg ${
+                rateLimitRemaining === 0
+                  ? "text-red-500 bg-red-500/10 animate-pulse"
+                  : rateLimitRemaining <= 5
+                    ? "text-red-500 bg-red-500/10"
+                    : rateLimitRemaining <= 15
+                      ? "text-amber-500 bg-amber-500/10"
+                      : "text-emerald-500 bg-emerald-500/10"
               }`}
-              style={{ width: `${(rateLimitRemaining / CONSTANTS.RATE_LIMIT) * 100}%` }}
-            />
+            >
+              {rateLimitRemaining === 0 ? "0" : rateLimitRemaining}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] text-[var(--text-secondary)]">
+              img
+            </span>
+            <span
+              className={`text-xs font-semibold px-2 py-0.5 rounded-lg ${
+                imageRateLimitRemaining === 0
+                  ? "text-red-500 bg-red-500/10 animate-pulse"
+                  : imageRateLimitRemaining <= 2
+                    ? "text-red-500 bg-red-500/10"
+                    : imageRateLimitRemaining <= 3
+                      ? "text-amber-500 bg-amber-500/10"
+                      : "text-emerald-500 bg-emerald-500/10"
+              }`}
+            >
+              {imageRateLimitRemaining === 0 ? "0" : imageRateLimitRemaining}
+            </span>
           </div>
         </div>
       </div>
@@ -310,13 +401,26 @@ export default function Header() {
             <Settings className="w-4 h-4" />
           </button>
           {settingsOpen && (
-            <div className="absolute top-full right-0 mt-2 w-40 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl shadow-2xl z-50 animate-slide-down py-1">
+            <div className="absolute top-full right-0 mt-2 w-48 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl shadow-2xl z-50 animate-slide-down py-1">
               <a
                 href="/tos.html"
                 className="block px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--shadow-light)] transition-colors"
               >
                 Terms of Service
               </a>
+              {passwordRequired && passwordAccepted && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetPassword();
+                    setSettingsOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-[var(--shadow-light)] transition-colors cursor-pointer"
+                  aria-label="Log out of password-protected instance"
+                >
+                  Lock instance
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -325,7 +429,9 @@ export default function Header() {
           type="button"
           onClick={toggle}
           className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--shadow-light)] transition-colors cursor-pointer"
-          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          aria-label={
+            theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+          }
         >
           {theme === "dark" ? (
             <Moon className="w-4 h-4" />

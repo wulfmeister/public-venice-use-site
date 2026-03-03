@@ -1,9 +1,15 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { appStorage } from '@/lib/storage';
-import { CONSTANTS } from '@/lib/constants';
-import { ModelCapabilities } from '@/lib/types';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { appStorage } from "@/lib/storage";
+import { CONSTANTS } from "@/lib/constants";
+import { ModelCapabilities } from "@/lib/types";
 
 interface AppContextType {
   hydrated: boolean;
@@ -11,6 +17,10 @@ interface AppContextType {
   acceptTos: () => void;
   rateLimitRemaining: number;
   setRateLimitRemaining: (n: number) => void;
+  imageRateLimitRemaining: number;
+  setImageRateLimitRemaining: (n: number) => void;
+  upscaleRateLimitRemaining: number;
+  setUpscaleRateLimitRemaining: (n: number) => void;
   isLoading: boolean;
   setIsLoading: (bool: boolean) => void;
   sidebarCollapsed: boolean;
@@ -26,7 +36,9 @@ interface AppContextType {
   imageModels: string[];
   setImageModels: (models: string[]) => void;
   modelCapabilities: Record<string, ModelCapabilities>;
-  setModelCapabilities: (capabilities: Record<string, ModelCapabilities>) => void;
+  setModelCapabilities: (
+    capabilities: Record<string, ModelCapabilities>,
+  ) => void;
   systemPrompt: string;
   setSystemPrompt: (prompt: string) => void;
   passwordRequired: boolean | null;
@@ -46,26 +58,47 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [tosAccepted, setTosAccepted] = useState(false);
   const [rateLimitRemaining, setRateLimitRemaining] = useState(20);
+  const [imageRateLimitRemaining, setImageRateLimitRemaining] =
+    useState<number>(CONSTANTS.RATE_LIMIT_IMAGE);
+  const [upscaleRateLimitRemaining, setUpscaleRateLimitRemaining] =
+    useState<number>(CONSTANTS.RATE_LIMIT_UPSCALE);
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [webSearchEnabled, setWebSearchEnabled] = useState(true);
-  const [selectedModel, setSelectedModel] = useState<string>(CONSTANTS.DEFAULT_MODEL);
-  const [selectedImageModel, setSelectedImageModel] = useState<string>(CONSTANTS.DEFAULT_IMAGE_MODEL);
+  const [selectedModel, setSelectedModel] = useState<string>(
+    CONSTANTS.DEFAULT_MODEL,
+  );
+  const [selectedImageModel, setSelectedImageModel] = useState<string>(
+    CONSTANTS.DEFAULT_IMAGE_MODEL,
+  );
   const [models, setModels] = useState<string[]>([]);
-  const [imageModels, setImageModels] = useState<string[]>([...CONSTANTS.IMAGE_MODELS]);
-  const [modelCapabilities, setModelCapabilities] = useState<Record<string, ModelCapabilities>>({});
-  const [systemPrompt, setSystemPrompt] = useState<string>('');
-  const [passwordRequired, setPasswordRequired] = useState<boolean | null>(null);
+  const [imageModels, setImageModels] = useState<string[]>([
+    ...CONSTANTS.IMAGE_MODELS,
+  ]);
+  const [modelCapabilities, setModelCapabilities] = useState<
+    Record<string, ModelCapabilities>
+  >({});
+  const [systemPrompt, setSystemPrompt] = useState<string>("");
+  const [passwordRequired, setPasswordRequiredState] = useState<boolean | null>(
+    null,
+  );
   const [passwordAccepted, setPasswordAccepted] = useState(false);
-  const [deploymentPassword, setDeploymentPassword] = useState('');
+  const [deploymentPassword, setDeploymentPassword] = useState("");
+
+  const setPasswordRequired = (required: boolean) => {
+    setPasswordRequiredState(required);
+    appStorage.setPasswordRequired(required);
+  };
 
   // Hydrate from localStorage after mount (client-only)
   useEffect(() => {
     setTosAccepted(appStorage.getTosAccepted());
     // Default sidebar to collapsed on mobile if no stored preference
     const storedCollapsed = appStorage.getSidebarCollapsed();
-    const hasStoredPref = localStorage.getItem('sidebarCollapsed') !== null;
-    setSidebarCollapsed(hasStoredPref ? storedCollapsed : window.innerWidth < 1024);
+    const hasStoredPref = localStorage.getItem("sidebarCollapsed") !== null;
+    setSidebarCollapsed(
+      hasStoredPref ? storedCollapsed : window.innerWidth < 1024,
+    );
     setWebSearchEnabled(appStorage.getWebSearchEnabled());
     setSelectedModel(appStorage.getSelectedModel());
     setSelectedImageModel(appStorage.getSelectedImageModel());
@@ -75,6 +108,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (cachedPw) {
       setDeploymentPassword(cachedPw);
       setPasswordAccepted(true);
+    }
+    const cachedPasswordRequired = appStorage.getPasswordRequired();
+    if (cachedPasswordRequired !== null) {
+      setPasswordRequiredState(cachedPasswordRequired);
+      if (!cachedPasswordRequired) {
+        setPasswordAccepted(true);
+      }
     }
     setHydrated(true);
   }, []);
@@ -92,7 +132,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     appStorage.setSelectedModel(selectedModel);
     appStorage.setSelectedImageModel(selectedImageModel);
     appStorage.setSystemPrompt(systemPrompt);
-  }, [tosAccepted, sidebarCollapsed, webSearchEnabled, selectedModel, selectedImageModel, systemPrompt]);
+  }, [
+    tosAccepted,
+    sidebarCollapsed,
+    webSearchEnabled,
+    selectedModel,
+    selectedImageModel,
+    systemPrompt,
+  ]);
 
   const acceptTos = () => {
     setTosAccepted(true);
@@ -100,14 +147,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const submitPassword = async (password: string): Promise<boolean> => {
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
+      const res = await fetch("/api/chat", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'X-TOS-Accepted': 'true',
-          'X-Deployment-Password': password,
+          "Content-Type": "application/json",
+          "X-TOS-Accepted": "true",
+          "X-Deployment-Password": password,
         },
-        body: JSON.stringify({ model: '', messages: [{ role: 'user', content: 'ping' }] }),
+        body: JSON.stringify({
+          model: "",
+          messages: [{ role: "user", content: "ping" }],
+        }),
       });
       if (res.status === 401) return false;
       // Any other status means password check passed
@@ -121,44 +171,50 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetPassword = () => {
-    setDeploymentPassword('');
+    setDeploymentPassword("");
     setPasswordAccepted(false);
     appStorage.clearDeploymentPassword();
   };
 
   return (
-    <AppContext.Provider value={{
-      hydrated,
-      tosAccepted,
-      acceptTos,
-      rateLimitRemaining,
-      setRateLimitRemaining,
-      isLoading,
-      setIsLoading,
-      sidebarCollapsed,
-      setSidebarCollapsed,
-      webSearchEnabled,
-      setWebSearchEnabled,
-      selectedModel,
-      setSelectedModel,
-      selectedImageModel,
-      setSelectedImageModel,
-      models,
-      setModels,
-      imageModels,
-      setImageModels,
-      modelCapabilities,
-      setModelCapabilities,
-      systemPrompt,
-      setSystemPrompt,
-      passwordRequired,
-      setPasswordRequired,
-      passwordAccepted,
-      setPasswordAccepted,
-      deploymentPassword,
-      submitPassword,
-      resetPassword
-    }}>
+    <AppContext.Provider
+      value={{
+        hydrated,
+        tosAccepted,
+        acceptTos,
+        rateLimitRemaining,
+        setRateLimitRemaining,
+        imageRateLimitRemaining,
+        setImageRateLimitRemaining,
+        upscaleRateLimitRemaining,
+        setUpscaleRateLimitRemaining,
+        isLoading,
+        setIsLoading,
+        sidebarCollapsed,
+        setSidebarCollapsed,
+        webSearchEnabled,
+        setWebSearchEnabled,
+        selectedModel,
+        setSelectedModel,
+        selectedImageModel,
+        setSelectedImageModel,
+        models,
+        setModels,
+        imageModels,
+        setImageModels,
+        modelCapabilities,
+        setModelCapabilities,
+        systemPrompt,
+        setSystemPrompt,
+        passwordRequired,
+        setPasswordRequired,
+        passwordAccepted,
+        setPasswordAccepted,
+        deploymentPassword,
+        submitPassword,
+        resetPassword,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );
@@ -167,7 +223,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 export function useApp() {
   const context = useContext(AppContext);
   if (context === undefined) {
-    throw new Error('useApp must be used within an AppProvider');
+    throw new Error("useApp must be used within an AppProvider");
   }
   return context;
 }

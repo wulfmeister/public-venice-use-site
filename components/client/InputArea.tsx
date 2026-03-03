@@ -34,6 +34,8 @@ export default function InputArea() {
     selectedImageModel,
     setSelectedModel,
     setRateLimitRemaining,
+    setImageRateLimitRemaining,
+    setUpscaleRateLimitRemaining,
     webSearchEnabled,
     models,
     modelCapabilities,
@@ -43,11 +45,18 @@ export default function InputArea() {
   } = useApp();
   const { showToast } = useToast();
 
-  const syncRateLimit = (response: Response) => {
+  const syncRateLimit = (
+    response: Response,
+    type: "chat" | "image" | "upscale" = "chat",
+  ) => {
     const remaining = response.headers.get("X-RateLimit-Remaining");
     if (remaining !== null) {
       const parsed = parseInt(remaining, 10);
-      if (!isNaN(parsed)) setRateLimitRemaining(parsed);
+      if (!isNaN(parsed)) {
+        if (type === "chat") setRateLimitRemaining(parsed);
+        else if (type === "image") setImageRateLimitRemaining(parsed);
+        else setUpscaleRateLimitRemaining(parsed);
+      }
     }
   };
 
@@ -145,13 +154,20 @@ export default function InputArea() {
       const userPrompt = deleteLastAssistantMessage();
       if (!userPrompt) return;
 
-      const placeholderId = addMessage('assistant', 'Thinking...');
+      const placeholderId = addMessage("assistant", "Thinking...");
       setIsLoading(true);
       await sendMessageRef.current(userPrompt, undefined, placeholderId);
     };
 
-    window.addEventListener('regenerateLastAssistant', handleRegenerate as EventListener);
-    return () => window.removeEventListener('regenerateLastAssistant', handleRegenerate as EventListener);
+    window.addEventListener(
+      "regenerateLastAssistant",
+      handleRegenerate as EventListener,
+    );
+    return () =>
+      window.removeEventListener(
+        "regenerateLastAssistant",
+        handleRegenerate as EventListener,
+      );
   }, [isLoading, deleteLastAssistantMessage, addMessage, setIsLoading]);
 
   const findBestVisionModel = useCallback(() => {
@@ -336,8 +352,8 @@ export default function InputArea() {
   // Listen for stop event from inline stop pill in Message
   useEffect(() => {
     const handleStop = () => cancelGeneration();
-    window.addEventListener('stopGenerating', handleStop);
-    return () => window.removeEventListener('stopGenerating', handleStop);
+    window.addEventListener("stopGenerating", handleStop);
+    return () => window.removeEventListener("stopGenerating", handleStop);
   }, [cancelGeneration]);
 
   const sendMessage = async (
@@ -459,7 +475,7 @@ export default function InputArea() {
         body: JSON.stringify({ prompt, model: selectedImageModel }),
       });
 
-      syncRateLimit(response);
+      syncRateLimit(response, "image");
 
       if (response.status === 401) {
         resetPassword();
@@ -526,7 +542,7 @@ export default function InputArea() {
         }),
       });
 
-      syncRateLimit(response);
+      syncRateLimit(response, "upscale");
 
       if (response.status === 401) {
         resetPassword();

@@ -3,21 +3,27 @@ import { CONSTANTS } from "./constants";
 
 // Sliding-window rate limiter: stores timestamps per IP in memory.
 // Resets on cold starts / redeployments (no persistent storage).
-const rateLimitMap = new Map<string, number[]>();
+// Separate maps per endpoint type to enforce independent limits.
+const rateLimitMaps = {
+  chat: new Map<string, number[]>(),
+  image: new Map<string, number[]>(),
+  upscale: new Map<string, number[]>(),
+} as const;
+
 let lastCleanup = Date.now();
 const CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
-const cleanupStaleEntries = (now: number) => {
+const cleanupStaleEntries = (now: number, map: Map<string, number[]>) => {
   if (now - lastCleanup < CLEANUP_INTERVAL) return;
   lastCleanup = now;
 
   const windowStart = now - CONSTANTS.RATE_WINDOW;
-  Array.from(rateLimitMap.entries()).forEach(([ip, timestamps]) => {
-    const filtered = timestamps.filter((t: number) => t > windowStart);
+  Array.from(map.entries()).forEach(([ip, timestamps]) => {
+    const filtered = timestamps.filter((t) => t > windowStart);
     if (filtered.length === 0) {
-      rateLimitMap.delete(ip);
+      map.delete(ip);
     } else if (filtered.length !== timestamps.length) {
-      rateLimitMap.set(ip, filtered);
+      map.set(ip, filtered);
     }
   });
 };
@@ -46,9 +52,12 @@ const getClientIp = (request: NextRequest) => {
   return ip;
 };
 
+export type RateLimitEndpoint = "chat" | "image" | "upscale";
+
 export interface RateLimitOptions {
   limit?: number;
   windowMs?: number;
+  endpoint?: RateLimitEndpoint;
 }
 
 export const checkRateLimit = (
@@ -60,8 +69,10 @@ export const checkRateLimit = (
   const limit = options.limit ?? CONSTANTS.RATE_LIMIT;
   const windowMs = options.windowMs ?? CONSTANTS.RATE_WINDOW;
   const windowStart = now - windowMs;
+  const endpoint = options.endpoint ?? "chat";
+  const rateLimitMap = rateLimitMaps[endpoint];
 
-  cleanupStaleEntries(now);
+  cleanupStaleEntries(now, rateLimitMap);
 
   let requests = rateLimitMap.get(clientIp) || [];
   requests = requests.filter((timestamp) => timestamp > windowStart);
