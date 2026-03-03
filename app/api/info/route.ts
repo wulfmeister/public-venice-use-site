@@ -12,6 +12,12 @@ import { InfoResponse } from "@/lib/types";
 
 const corsHeaders = createCorsHeaders(["GET", "OPTIONS"]);
 
+const parseEnvLimit = (val: string | undefined): number | undefined => {
+  if (!val) return undefined;
+  const parsed = parseInt(val, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+};
+
 export async function OPTIONS() {
   return handleOptions(corsHeaders);
 }
@@ -79,7 +85,14 @@ export async function GET() {
     image_models: imageModels,
     model_capabilities: modelCapabilities,
     rate_limit: {
-      requests: CONSTANTS.RATE_LIMIT,
+      chat:
+        parseEnvLimit(process.env.RATE_LIMIT_CHAT) ?? CONSTANTS.RATE_LIMIT_CHAT,
+      image:
+        parseEnvLimit(process.env.RATE_LIMIT_IMAGE) ??
+        CONSTANTS.RATE_LIMIT_IMAGE,
+      upscale:
+        parseEnvLimit(process.env.RATE_LIMIT_UPSCALE) ??
+        CONSTANTS.RATE_LIMIT_UPSCALE,
       window: "1 hour",
       per: "IP address",
     },

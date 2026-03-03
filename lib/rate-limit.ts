@@ -60,16 +60,30 @@ export interface RateLimitOptions {
   endpoint?: RateLimitEndpoint;
 }
 
+const getEnvLimit = (endpoint: RateLimitEndpoint): number | undefined => {
+  const envKey = `RATE_LIMIT_${endpoint.toUpperCase()}`;
+  const val = process.env[envKey];
+  if (!val) return undefined;
+  const parsed = parseInt(val, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+};
+
 export const checkRateLimit = (
   request: NextRequest,
   options: RateLimitOptions = {},
 ): RateLimitResult => {
   const clientIp = getClientIp(request);
   const now = Date.now();
-  const limit = options.limit ?? CONSTANTS.RATE_LIMIT;
+  const endpoint = options.endpoint ?? "chat";
+  const defaultLimit =
+    endpoint === "image"
+      ? CONSTANTS.RATE_LIMIT_IMAGE
+      : endpoint === "upscale"
+        ? CONSTANTS.RATE_LIMIT_UPSCALE
+        : CONSTANTS.RATE_LIMIT_CHAT;
+  const limit = getEnvLimit(endpoint) ?? options.limit ?? defaultLimit;
   const windowMs = options.windowMs ?? CONSTANTS.RATE_WINDOW;
   const windowStart = now - windowMs;
-  const endpoint = options.endpoint ?? "chat";
   const rateLimitMap = rateLimitMaps[endpoint];
 
   cleanupStaleEntries(now, rateLimitMap);

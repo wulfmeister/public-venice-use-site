@@ -9,6 +9,7 @@ import { CONSTANTS } from "@/lib/constants";
 import { storeImageDataUrl } from "@/lib/image-store";
 import { parseStreamingResponse } from "@/lib/streaming";
 import { sendChatRequest } from "@/lib/chat-api";
+import { friendlyError } from "@/lib/error-messages";
 import InputAttachments from "./input/InputAttachments";
 import InputComposer from "./input/InputComposer";
 import { ImageAttachment } from "./input/input-types";
@@ -424,13 +425,10 @@ export default function InputArea() {
       console.error("Error sending message:", error);
       if (placeholderId) {
         updateMessage(placeholderId, {
-          content: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+          content: friendlyError(error),
         });
       } else {
-        addMessage(
-          "assistant",
-          `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
+        addMessage("assistant", friendlyError(error));
       }
     } finally {
       clearTimeout(timeout);
@@ -506,7 +504,7 @@ export default function InputArea() {
     } catch (error) {
       console.error("Error generating image:", error);
       updateMessage(placeholderId, {
-        content: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        content: friendlyError(error),
         imageId: undefined,
         imageName: undefined,
         imageMime: undefined,
@@ -574,7 +572,7 @@ export default function InputArea() {
     } catch (error) {
       console.error("Error upscaling image:", error);
       updateMessage(placeholderId, {
-        content: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        content: friendlyError(error),
         imageId: undefined,
         imageName: undefined,
         imageMime: undefined,

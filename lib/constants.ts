@@ -32,6 +32,17 @@ export const CONSTANTS = {
 
   IMAGE_MODELS: ["nano-banana-pro", "venice-sd35", "seedream-v4", "upscaler"],
 
+  MODEL_DISPLAY_NAMES: {
+    "zai-org-glm-5": "GLM-5",
+    "llama-3.3-70b": "Llama 3.3 70B",
+    "deepseek-r1-distill-llama-70b": "DeepSeek R1 Distill Llama 70B",
+    "dolphin-2.9.2-qwen2-72b": "Dolphin 2.9.2 Qwen2 72B",
+    "nano-banana-pro": "Nano Banana Pro",
+    "venice-sd35": "Venice SD 3.5",
+    "seedream-v4": "Seedream v4",
+    upscaler: "Upscaler",
+  } as Record<string, string>,
+
   // Chat
   CHAT_CONTEXT_LIMIT: 20,
   MAX_CHAT_MESSAGES: 50,

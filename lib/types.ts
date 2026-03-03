@@ -144,7 +144,9 @@ export interface InfoResponse {
   image_models: string[];
   model_capabilities: Record<string, ModelCapabilities>;
   rate_limit: {
-    requests: number;
+    chat: number;
+    image: number;
+    upscale: number;
     window: string;
     per: string;
   };
@@ -192,4 +194,13 @@ export interface ScheduledPromptSettings {
   lastRunDate: string;
   lastRunTime: string;
   conversationId: string;
+}
+
+export interface BalanceResponse {
+  canConsume: boolean;
+  balances: {
+    diem: number;
+    usd: number;
+  };
+  diemEpochAllocation: number;
 }

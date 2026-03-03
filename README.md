@@ -14,6 +14,8 @@ A free, privacy-focused AI chat app powered by Venice.ai with a built-in Next.js
 ![Playwright](https://img.shields.io/badge/Playwright-e2e-2EAD33.svg?logo=playwright&logoColor=white)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](https://github.com/yourusername/openchat/issues)
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourusername%2Fopenchat&env=VENICE_API_KEY,DEPLOYMENT_PASSWORD&envDescription=VENICE_API_KEY%20is%20required.%20Get%20one%20at%20venice.ai%2Fsettings%2Fapi.%20DEPLOYMENT_PASSWORD%20is%20optional%20%E2%80%94%20set%20to%20require%20a%20password.&project-name=openchat)
+
 ## Features
 
 - **Privacy-First Architecture** — Zero conversation logging; chats stay in your browser
@@ -30,9 +32,12 @@ A free, privacy-focused AI chat app powered by Venice.ai with a built-in Next.js
 - **Streaming Responses** — See AI responses as they generate in real-time
 - **Modern UI** — Shimmer loading skeletons, glassmorphism header, gradient welcome screen with quick-action cards
 - **Link Previews** — Dynamic Open Graph image generation for rich Slack/iMessage/social previews
-- **Rate Limiting** — Per-endpoint limits (20 chat / 5 image / 5 upscale per hour per IP) with per-type indicators (green → amber → red)
+- **Rate Limiting** — Per-endpoint limits (20 chat / 5 image / 5 upscale per hour per IP) with per-type indicators (green → amber → red); overridable via env vars
 - **OpenAI-Compatible Endpoints** — Use as a drop-in Venice proxy at `/v1/chat/completions` and `/v1/models`
-- **Password Protection** — Optionally require a deployment password via `DEPLOYMENT_PASSWORD` env var; gate is rendered immediately from cached state with no flicker
+- **Password Protection** — Optionally require a deployment password via `DEPLOYMENT_PASSWORD` env var; ToS gate is auto-skipped for password-protected instances
+- **Friendly Error Messages** — HTTP errors and network failures surface as plain-language messages instead of raw status codes
+- **API Balance Visibility** — Settings menu shows current Venice API balance for password-protected (private) instances
+- **Browser Persistence Warning** — First-visit dismissible banner reminds users that chats are saved locally and won't sync across devices
 
 ## Application State Machine
 
@@ -131,11 +136,15 @@ Visit `http://localhost:3000`.
 
 ### 4. Deploy to Vercel
 
+Click the **Deploy with Vercel** button at the top of this README for one-click deployment — it will prompt you for `VENICE_API_KEY` and an optional `DEPLOYMENT_PASSWORD`.
+
+Or deploy manually:
+
 ```bash
 vercel --prod
 ```
 
-Or push to GitHub and import in the [Vercel dashboard](https://vercel.com). Add `VENICE_API_KEY` as an environment variable.
+Push to GitHub and import in the [Vercel dashboard](https://vercel.com). Add `VENICE_API_KEY` as an environment variable.
 
 ## Project Structure
 
@@ -150,6 +159,7 @@ openchat/
 │       ├── image/route.ts      # POST — image generation
 │       ├── upscale/route.ts    # POST — image upscaling
 │       ├── info/route.ts       # GET  — available models + capabilities
+│       ├── balance/route.ts    # GET  — Venice API billing balance (admin)
 │       └── og/route.tsx        # GET  — dynamic Open Graph preview image
 ├── components/client/
 │   ├── ChatArea.tsx            # Message list + scroll management
@@ -161,6 +171,7 @@ openchat/
 │   ├── SystemPromptSettings.tsx # Custom system prompt editor
 │   ├── ScheduledPrompt.tsx     # Scheduled daily prompt UI
 │   ├── TermsOfService.tsx      # ToS acceptance gate
+│   ├── PersistenceWarning.tsx  # First-visit browser-only storage reminder
 │   ├── WelcomeMessage.tsx      # Welcome screen with quick-action card grid
 │   └── input/
 │       ├── InputComposer.tsx   # Text input + button groups + stop control
@@ -183,6 +194,7 @@ openchat/
 │   ├── markdown.ts             # Markdown → HTML with citation links
 │   ├── rate-limit.ts           # Sliding-window per-IP rate limiter (server)
 │   ├── storage.ts              # localStorage typed getters/setters
+│   ├── error-messages.ts       # friendlyError() — HTTP status → user-facing text
 │   ├── streaming.ts            # SSE stream parser + citation normalizer
 │   ├── types.ts                # TypeScript interfaces
 │   ├── validation.ts           # Input validators (URL, role, data URL)
@@ -300,7 +312,7 @@ Per-endpoint sliding-window limits, tracked independently in the UI:
 | `/api/image`   | 5 req  | 1 hour |
 | `/api/upscale` | 5 req  | 1 hour |
 
-Exceeding any limit returns HTTP 429 with `Retry-After` header. Counters are in-memory and reset on cold starts / redeployments.
+Exceeding any limit returns HTTP 429 with `Retry-After` header. Counters are in-memory and reset on cold starts / redeployments. Override defaults with `RATE_LIMIT_CHAT`, `RATE_LIMIT_IMAGE`, and `RATE_LIMIT_UPSCALE` environment variables.
 
 ## Environment Variables
 
@@ -310,6 +322,9 @@ Exceeding any limit returns HTTP 429 with `Retry-After` header. Counters are in-
 | `DEPLOYMENT_PASSWORD`  | No       | Require a password to access the instance (leave blank for public access) |
 | `ALLOWED_ORIGIN`       | No       | CORS origin restriction (defaults to `*`)                                 |
 | `NEXT_PUBLIC_BASE_URL` | No       | Base URL for OG images (auto-detected on Vercel)                          |
+| `RATE_LIMIT_CHAT`      | No       | Chat requests per IP per hour (default: 20)                               |
+| `RATE_LIMIT_IMAGE`     | No       | Image generation requests per IP per hour (default: 5)                    |
+| `RATE_LIMIT_UPSCALE`   | No       | Image upscale requests per IP per hour (default: 5)                       |
 
 Get a key at [venice.ai](https://venice.ai) → API settings.
 

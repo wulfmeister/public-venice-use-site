@@ -7,6 +7,7 @@ import ChatArea from "@/components/client/ChatArea";
 import InputArea from "@/components/client/InputArea";
 import TermsOfService from "@/components/client/TermsOfService";
 import PasswordGate from "@/components/client/PasswordGate";
+import PersistenceWarning from "@/components/client/PersistenceWarning";
 
 export default function Home() {
   const { tosAccepted, sidebarCollapsed } = useApp();
@@ -21,6 +22,8 @@ export default function Home() {
 
       {/* Header */}
       <Header />
+
+      <PersistenceWarning />
 
       {/* Main Layout */}
       <div className="flex flex-1 overflow-hidden">
@@ -39,7 +42,6 @@ export default function Home() {
           {tosAccepted && <InputArea />}
         </main>
       </div>
-
     </div>
   );
 }

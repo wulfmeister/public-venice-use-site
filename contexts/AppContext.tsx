@@ -115,6 +115,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!cachedPasswordRequired) {
         setPasswordAccepted(true);
       }
+      // Auto-accept ToS for password-protected instances — private family
+      // deployments don't need the extra gate since the password already
+      // establishes the user is authorized.
+      if (cachedPasswordRequired && cachedPw) {
+        setTosAccepted(true);
+      }
     }
     setHydrated(true);
   }, []);

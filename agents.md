@@ -29,7 +29,9 @@ Next.js API Routes (server-side)
 - **Placeholder pattern**: In `lib/markdown.ts`, code blocks, inline code, and citation links are extracted into arrays and replaced with `\x00PLACEHOLDER{n}\x00` tokens before HTML escaping. This protects generated HTML from being mangled by the sanitization regexes. The tokens are restored at the end of `formatMessage()`.
 - **Model price filtering**: `lib/venice-models.ts` fetches the full model list from Venice and filters out models above the price thresholds in `constants.ts`. Results are cached for 5 minutes. On API failure, a hardcoded fallback list is used.
 - **Password gate**: If `DEPLOYMENT_PASSWORD` env var is set, every API route enforces `X-Deployment-Password` header validation via `ensureDeploymentPassword()` in `lib/api-utils.ts`. The client fetches `password_required` from `/api/info` on mount and shows `components/client/PasswordGate.tsx`. The boolean is cached to `localStorage` (`passwordRequired` key) so the gate renders immediately on next load without waiting for the info fetch. The accepted password is stored in `localStorage` (`deploymentPassword` key) and sent on every request. A "Lock instance" button in the Header settings dropdown calls `resetPassword()` to clear both values.
-- **Split rate limit tracking**: The server enforces per-endpoint limits (`RATE_LIMIT_CHAT=20`, `RATE_LIMIT_IMAGE=5`, `RATE_LIMIT_UPSCALE=5`). The client maintains three separate counters in `AppContext` (`rateLimitRemaining`, `imageRateLimitRemaining`, `upscaleRateLimitRemaining`), each updated from the `X-RateLimit-Remaining` response header by the corresponding request handler in `InputArea.tsx`. Both counters are shown in the Header.
+- **Split rate limit tracking**: The server enforces per-endpoint limits (defaults: chat=20, image=5, upscale=5 per hour). Limits can be overridden via `RATE_LIMIT_CHAT`, `RATE_LIMIT_IMAGE`, `RATE_LIMIT_UPSCALE` env vars. The client maintains three separate counters in `AppContext` (`rateLimitRemaining`, `imageRateLimitRemaining`, `upscaleRateLimitRemaining`), each updated from the `X-RateLimit-Remaining` response header by the corresponding request handler in `InputArea.tsx`. Both counters are shown in the Header.
+- **ToS auto-skip for private instances**: When `DEPLOYMENT_PASSWORD` is set and the user has entered the correct password, the ToS gate is automatically skipped. This is handled in both `AppContext.tsx` (hydration path) and `Header.tsx` (fetch path). The logic: password-protected = private instance = no need for ToS friction.
+- **Friendly error messages**: `lib/error-messages.ts` exports `friendlyError(error)` which maps HTTP status codes and network errors to user-friendly messages. Used in all catch blocks in `InputArea.tsx` (chat, image, upscale).
 
 ## Testing
 
@@ -134,7 +136,10 @@ Wrap your app with `<ToastProvider>` (already done in `app/layout.tsx`). Compone
 
 ## Environment Variables
 
-| Variable              | Required | Description                               |
-| --------------------- | -------- | ----------------------------------------- |
-| `VENICE_API_KEY`      | Yes      | Venice.ai API key for proxied requests    |
-| `DEPLOYMENT_PASSWORD` | No       | Require a password to access the instance |
+| Variable              | Required | Description                                            |
+| --------------------- | -------- | ------------------------------------------------------ |
+| `VENICE_API_KEY`      | Yes      | Venice.ai API key for proxied requests                 |
+| `DEPLOYMENT_PASSWORD` | No       | Require a password to access the instance              |
+| `RATE_LIMIT_CHAT`     | No       | Chat requests per IP per hour (default: 20)            |
+| `RATE_LIMIT_IMAGE`    | No       | Image generation requests per IP per hour (default: 5) |
+| `RATE_LIMIT_UPSCALE`  | No       | Image upscale requests per IP per hour (default: 5)    |

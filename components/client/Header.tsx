@@ -38,11 +38,15 @@ export default function Header() {
     passwordRequired,
     passwordAccepted,
     resetPassword,
+    acceptTos,
+    deploymentPassword,
   } = useApp();
 
   const [textDropdownOpen, setTextDropdownOpen] = useState(false);
   const [imageDropdownOpen, setImageDropdownOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [balanceLabel, setBalanceLabel] = useState<string | null>(null);
+  const balanceFetchedAt = useRef<number>(0);
   const textDropdownRef = useRef<HTMLDivElement>(null);
   const imageDropdownRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
@@ -95,6 +99,9 @@ export default function Header() {
             if (!data.password_required) {
               setPasswordAccepted(true);
             }
+            if (data.password_required && passwordAccepted) {
+              acceptTos();
+            }
           }
           if (
             availableModels.length > 0 &&
@@ -134,6 +141,8 @@ export default function Header() {
     setSelectedImageModel,
     setPasswordRequired,
     setPasswordAccepted,
+    passwordAccepted,
+    acceptTos,
   ]);
 
   useEffect(() => {
@@ -164,7 +173,36 @@ export default function Header() {
     }
   }, [selectedModel, modelCapabilities, setWebSearchEnabled]);
 
+  useEffect(() => {
+    if (!settingsOpen || !passwordRequired || !passwordAccepted) return;
+    if (Date.now() - balanceFetchedAt.current < 5 * 60 * 1000) return;
+
+    const headers: Record<string, string> = {
+      "X-TOS-Accepted": "true",
+    };
+    if (deploymentPassword) {
+      headers["X-Deployment-Password"] = deploymentPassword;
+    }
+
+    fetch("/api/balance", { headers })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data?.balances) return;
+        const { usd, diem } = data.balances;
+        if (typeof usd === "number" && usd > 0) {
+          setBalanceLabel(`$${usd.toFixed(2)}`);
+        } else if (typeof diem === "number") {
+          setBalanceLabel(`${diem.toFixed(1)} DIEM`);
+        }
+        balanceFetchedAt.current = Date.now();
+      })
+      .catch(() => {});
+  }, [settingsOpen, passwordRequired, passwordAccepted, deploymentPassword]);
+
   const formatModelName = (modelId: string) => {
+    if (CONSTANTS.MODEL_DISPLAY_NAMES[modelId]) {
+      return CONSTANTS.MODEL_DISPLAY_NAMES[modelId];
+    }
     return modelId
       .split("-")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -402,6 +440,11 @@ export default function Header() {
           </button>
           {settingsOpen && (
             <div className="absolute top-full right-0 mt-2 w-48 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl shadow-2xl z-50 animate-slide-down py-1">
+              {passwordRequired && passwordAccepted && (
+                <div className="px-4 py-2.5 text-sm text-[var(--text-secondary)] border-b border-[var(--border-color)]">
+                  API Balance: {balanceLabel ?? "--"}
+                </div>
+              )}
               <a
                 href="/tos.html"
                 className="block px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--shadow-light)] transition-colors"
