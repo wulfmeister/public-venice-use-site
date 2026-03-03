@@ -24,19 +24,26 @@ export const CONSTANTS = {
 
   // Default values
   DEFAULT_MODEL: "zai-org-glm-5",
-  DEFAULT_IMAGE_MODEL: "nano-banana-pro",
+  DEFAULT_IMAGE_MODEL: "nano-banana-2",
   DEFAULT_IMAGE_SIZE: "1024x1024",
   DEFAULT_IMAGE_FORMAT: "png",
   DEFAULT_TEMPERATURE: 0.7,
   DEFAULT_MAX_TOKENS: 2048,
 
-  IMAGE_MODELS: ["nano-banana-pro", "venice-sd35", "seedream-v4", "upscaler"],
+  IMAGE_MODELS: [
+    "nano-banana-2",
+    "nano-banana-pro",
+    "venice-sd35",
+    "seedream-v4",
+    "upscaler",
+  ],
 
   MODEL_DISPLAY_NAMES: {
     "zai-org-glm-5": "GLM-5",
     "llama-3.3-70b": "Llama 3.3 70B",
     "deepseek-r1-distill-llama-70b": "DeepSeek R1 Distill Llama 70B",
     "dolphin-2.9.2-qwen2-72b": "Dolphin 2.9.2 Qwen2 72B",
+    "nano-banana-2": "Nano Banana 2",
     "nano-banana-pro": "Nano Banana Pro",
     "venice-sd35": "Venice SD 3.5",
     "seedream-v4": "Seedream v4",
