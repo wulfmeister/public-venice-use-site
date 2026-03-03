@@ -4,6 +4,10 @@ A free, privacy-focused AI chat app powered by Venice.ai with a built-in Next.js
 
 **[Try the free public demo](https://public-venice-use-site.vercel.app/)**
 
+<p align="center">
+  <img src="public/images/screenshot.png" alt="OpenChat — AI chat interface" width="800" />
+</p>
+
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Vercel-black.svg)
 [![Venice AI](https://img.shields.io/badge/Powered%20by-Venice.ai-purple)](https://venice.ai)
