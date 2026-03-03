@@ -44,3 +44,9 @@ test-results/
 
 # Generated screenshots
 scripts/screenshots/
+
+# Agent working files
+.sisyphus/
+
+# Task tracking
+tasks/
