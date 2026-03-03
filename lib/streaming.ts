@@ -28,7 +28,9 @@ export const normalizeCitations = (
       id: String(index),
       url: citation.url || (metadata?.url as string | undefined),
       title:
-        citation.title || (metadata?.title as string | undefined) || `Source ${index + 1}`,
+        citation.title ||
+        (metadata?.title as string | undefined) ||
+        `Source ${index + 1}`,
       snippet: citation.snippet || citation.description || "",
       metadata: metadata || (citation as unknown as Record<string, unknown>),
     };
@@ -44,25 +46,46 @@ export const parseStreamingResponse = async (
   if (!reader) throw new Error("No response body");
 
   const decoder = new TextDecoder();
-  let buffer = ""; // Partial line carried across chunks (SSE lines can split mid-chunk)
+  let buffer = "";
   let fullContent = "";
   const citationDocuments: Record<string, Citation> = {};
 
-  // If the signal fires while reader.read() is blocked, cancel the reader
-  // so the await resolves immediately instead of hanging.
   const onAbort = () => reader.cancel();
-  options?.signal?.addEventListener('abort', onAbort);
+  options?.signal?.addEventListener("abort", onAbort);
+
+  const streamTimeout = 30000;
+  const readWithTimeout = async () =>
+    new Promise<ReadableStreamReadResult<Uint8Array>>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reader.cancel().catch(() => {});
+        reject(new Error("Stream timeout: no data received for 30 seconds"));
+      }, streamTimeout);
+
+      reader.read().then(
+        (result) => {
+          clearTimeout(timeoutId);
+          resolve(result);
+        },
+        (error) => {
+          clearTimeout(timeoutId);
+          reject(error);
+        },
+      );
+    });
 
   try {
     while (true) {
       if (options?.signal?.aborted) break;
 
-      const { done, value } = await reader.read();
+      const { done, value } = await readWithTimeout();
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split("\n");
       buffer = lines.pop() || "";
+
+      let hasContentUpdate = false;
+      let hasCitationUpdate = false;
 
       for (const line of lines) {
         const trimmedLine = line.trim();
@@ -76,7 +99,7 @@ export const parseStreamingResponse = async (
           const content = parsed.choices?.[0]?.delta?.content;
           if (content) {
             fullContent += content;
-            callbacks.onContent(fullContent);
+            hasContentUpdate = true;
           }
 
           if (parsed.venice_parameters?.web_search_citations) {
@@ -84,12 +107,19 @@ export const parseStreamingResponse = async (
               parsed.venice_parameters.web_search_citations;
             if (Array.isArray(citationsPayload)) {
               normalizeCitations(citationsPayload, citationDocuments);
-              callbacks.onCitations(citationDocuments);
+              hasCitationUpdate = true;
             }
           }
         } catch (error) {
           console.warn("Failed to parse streaming data:", data, error);
         }
+      }
+
+      if (hasContentUpdate) {
+        callbacks.onContent(fullContent);
+      }
+      if (hasCitationUpdate) {
+        callbacks.onCitations(citationDocuments);
       }
     }
 
@@ -100,7 +130,7 @@ export const parseStreamingResponse = async (
       );
     }
   } finally {
-    options?.signal?.removeEventListener('abort', onAbort);
+    options?.signal?.removeEventListener("abort", onAbort);
     reader.cancel().catch(() => {});
   }
 

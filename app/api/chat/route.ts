@@ -285,6 +285,13 @@ export async function POST(request: NextRequest) {
     const rateLimitHeaders = buildRateLimitHeaders(rateLimit);
 
     if (stream) {
+      if (!veniceResponse.body) {
+        console.error("Venice API returned empty body for streaming request");
+        return jsonResponse(
+          { error: "Empty response from Venice API" },
+          { status: 502, corsHeaders },
+        );
+      }
       return new Response(veniceResponse.body, {
         status: 200,
         headers: {
@@ -307,7 +314,10 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: unknown) {
-    console.error("Failed to reach Venice API:", error instanceof Error ? error.message : "Unknown error");
+    console.error(
+      "Failed to reach Venice API:",
+      error instanceof Error ? error.message : "Unknown error",
+    );
     return jsonResponse(
       {
         error: "Failed to reach Venice API",

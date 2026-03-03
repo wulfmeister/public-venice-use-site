@@ -408,6 +408,24 @@ export default function Header() {
               >
                 Terms of Service
               </a>
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    confirm(
+                      "Clear all chat data and settings? This will delete all conversations and reset preferences.",
+                    )
+                  ) {
+                    localStorage.clear();
+                    window.location.reload();
+                  }
+                  setSettingsOpen(false);
+                }}
+                className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--shadow-light)] transition-colors cursor-pointer"
+                aria-label="Clear all chat data and settings"
+              >
+                Clear chat data
+              </button>
               {passwordRequired && passwordAccepted && (
                 <button
                   type="button"
