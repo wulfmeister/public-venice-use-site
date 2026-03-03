@@ -77,8 +77,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   >({});
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [fileContext, setFileContext] =
-    useState<FileContext | null>(null);
+  const [fileContext, setFileContext] = useState<FileContext | null>(null);
   // Tracks a newly created conversation ID before React flushes setCurrentId,
   // so addMessage can append to the right conversation within the same render cycle.
   const pendingConversationIdRef = useRef<string | null>(null);
@@ -279,7 +278,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const create = (): string => {
     const newId = generateId();
-    setConversations((prev) => ({ ...prev, [newId]: makeConversation(newId, "New Chat", []) }));
+    setConversations((prev) => ({
+      ...prev,
+      [newId]: makeConversation(newId, "New Chat", []),
+    }));
     setCurrentId(newId);
     setUploadedFiles([]);
     setFileContext(null);
@@ -335,7 +337,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     imageName?: string,
     imageMime?: string,
   ) => {
-    const newMessage = makeMessage(role, content, citations, imageId, imageName, imageMime);
+    const newMessage = makeMessage(
+      role,
+      content,
+      citations,
+      imageId,
+      imageName,
+      imageMime,
+    );
     const activeConversationId = currentId || pendingConversationIdRef.current;
 
     if (!activeConversationId || !conversations[activeConversationId]) {
@@ -343,7 +352,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       pendingConversationIdRef.current = newId;
       setConversations((prev) => ({
         ...prev,
-        [newId]: makeConversation(newId, deriveTitle(content, imageId), [newMessage]),
+        [newId]: makeConversation(newId, deriveTitle(content, imageId), [
+          newMessage,
+        ]),
       }));
       setCurrentId(newId);
       setUploadedFiles([]);
@@ -381,7 +392,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     imageName?: string,
     imageMime?: string,
   ) => {
-    const newMessage = makeMessage(role, content, citations, imageId, imageName, imageMime);
+    const newMessage = makeMessage(
+      role,
+      content,
+      citations,
+      imageId,
+      imageName,
+      imageMime,
+    );
 
     setConversations((prev) => {
       const conversation = prev[conversationId];
@@ -389,7 +407,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       if (!conversation) {
         return {
           ...prev,
-          [conversationId]: makeConversation(conversationId, deriveTitle(content, imageId), [newMessage]),
+          [conversationId]: makeConversation(
+            conversationId,
+            deriveTitle(content, imageId),
+            [newMessage],
+          ),
         };
       }
 
@@ -416,24 +438,27 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     messageId: string,
     updates: Partial<Omit<Conversation["messages"][number], "id" | "role">>,
   ) => {
-    const activeConversationId = currentId || pendingConversationIdRef.current;
-    if (!activeConversationId || !conversations[activeConversationId]) return;
-
     setConversations((prev) => {
-      const conversation = prev[activeConversationId];
-      const updatedMessages = conversation.messages.map((message) => {
-        if (message.id !== messageId) return message;
-        return {
-          ...message,
-          ...updates,
-          id: message.id,
-          role: message.role,
-        };
-      });
+      const conversationEntry = Object.entries(prev).find(([, conversation]) =>
+        conversation.messages.some((message) => message.id === messageId),
+      );
+      if (!conversationEntry) return prev;
+
+      const [conversationId, conversation] = conversationEntry;
+      const updatedMessages = conversation.messages.map((message) =>
+        message.id !== messageId
+          ? message
+          : {
+              ...message,
+              ...updates,
+              id: message.id,
+              role: message.role,
+            },
+      );
 
       return {
         ...prev,
-        [activeConversationId]: {
+        [conversationId]: {
           ...conversation,
           messages: updatedMessages,
           updatedAt: new Date().toISOString(),
@@ -491,7 +516,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const deleteLastAssistantMessage = (): string | null => {
     const activeConversationId = currentId || pendingConversationIdRef.current;
-    if (!activeConversationId || !conversations[activeConversationId]) return null;
+    if (!activeConversationId || !conversations[activeConversationId])
+      return null;
 
     const conversation = conversations[activeConversationId];
     const messages = conversation.messages;
@@ -499,7 +525,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     // Find the last assistant message
     let lastAssistantIdx = -1;
     for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === 'assistant') {
+      if (messages[i].role === "assistant") {
         lastAssistantIdx = i;
         break;
       }
@@ -509,7 +535,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     // Find the user message that preceded it to get the prompt
     let userPrompt: string | null = null;
     for (let i = lastAssistantIdx - 1; i >= 0; i--) {
-      if (messages[i].role === 'user') {
+      if (messages[i].role === "user") {
         userPrompt = messages[i].content;
         break;
       }
@@ -532,11 +558,15 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   };
 
   const uploadFiles = async (files: File[]) => {
-    const supportedExts = CONSTANTS.SUPPORTED_FILE_EXTENSIONS as readonly string[];
+    const supportedExts =
+      CONSTANTS.SUPPORTED_FILE_EXTENSIONS as readonly string[];
     const validFiles = files.filter((file) => {
-      const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+      const ext = "." + file.name.split(".").pop()?.toLowerCase();
       if (!supportedExts.includes(ext)) {
-        showToast(`Unsupported file type: ${ext}. Supported: ${supportedExts.join(', ')}`, "error");
+        showToast(
+          `Unsupported file type: ${ext}. Supported: ${supportedExts.join(", ")}`,
+          "error",
+        );
         return false;
       }
       if (file.size > CONSTANTS.MAX_SINGLE_FILE_SIZE) {
@@ -571,7 +601,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       try {
         const parsed = await parseFile(file);
         const uploadedFile: UploadedFile = {
-          id: generateScopedId('file'),
+          id: generateScopedId("file"),
           name: file.name,
           size: file.size,
           format: parsed.format,

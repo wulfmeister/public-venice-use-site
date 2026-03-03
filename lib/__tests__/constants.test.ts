@@ -13,7 +13,7 @@ describe("CONSTANTS", () => {
 
   it("has default models", () => {
     expect(CONSTANTS.DEFAULT_MODEL).toBe("zai-org-glm-5");
-    expect(CONSTANTS.DEFAULT_IMAGE_MODEL).toBe("nano-banana-pro");
+    expect(CONSTANTS.DEFAULT_IMAGE_MODEL).toBe("nano-banana-2");
   });
 
   it("has image models list", () => {

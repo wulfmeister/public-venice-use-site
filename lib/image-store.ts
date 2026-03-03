@@ -42,13 +42,14 @@ const withStore = async <T>(
   const db = await openDatabase();
   const transaction = db.transaction(STORE_NAME, mode);
   const store = transaction.objectStore(STORE_NAME);
+  const txComplete = new Promise<void>((resolve, reject) => {
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error);
+  });
   try {
     const result = await callback(store);
-    await new Promise<void>((resolve, reject) => {
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
-      transaction.onabort = () => reject(transaction.error);
-    });
+    await txComplete;
     return result;
   } finally {
     db.close();

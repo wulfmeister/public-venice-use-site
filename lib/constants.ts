@@ -32,9 +32,9 @@ export const CONSTANTS = {
 
   IMAGE_MODELS: [
     "nano-banana-2",
+    "seedream-v4",
     "nano-banana-pro",
     "venice-sd35",
-    "seedream-v4",
     "upscaler",
   ],
 
