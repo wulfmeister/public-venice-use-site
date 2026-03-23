@@ -167,4 +167,94 @@ describe('useScheduledPrompt', () => {
 
     expect(result.current.getNextRunTime()).toBeNull();
   });
+
+  it('getNextRunTime returns a string when enabled with a prompt', () => {
+    const saved = {
+      enabled: true,
+      prompt: 'Daily check',
+      hour: 14,
+      minute: 30,
+      model: '',
+      webSearch: 'current' as const,
+      lastRunDate: '',
+      lastRunTime: '',
+      conversationId: 'conv-1',
+    };
+
+    vi.mocked(scheduledPromptStorage.get).mockReturnValue(saved);
+
+    const { result } = renderHook(() => useScheduledPrompt());
+
+    const nextRun = result.current.getNextRunTime();
+    expect(nextRun).not.toBeNull();
+    expect(typeof nextRun).toBe('string');
+    expect(nextRun!.length).toBeGreaterThan(0);
+  });
+
+  it('disabling resets interval (isRunning stays false when not executing)', () => {
+    const saved = {
+      enabled: true,
+      prompt: 'Daily check',
+      hour: 8,
+      minute: 0,
+      model: '',
+      webSearch: 'current' as const,
+      lastRunDate: '',
+      lastRunTime: '',
+      conversationId: 'conv-1',
+    };
+
+    vi.mocked(scheduledPromptStorage.get).mockReturnValue(saved);
+
+    const { result } = renderHook(() => useScheduledPrompt());
+
+    // Initially enabled, isRunning should be false (no prompt execution triggered)
+    expect(result.current.isRunning).toBe(false);
+
+    // Disable the schedule
+    act(() => {
+      result.current.updateSettings({ enabled: false });
+    });
+
+    expect(result.current.settings.enabled).toBe(false);
+    expect(result.current.isRunning).toBe(false);
+  });
+
+  it('does not generate a new conversationId when one already exists on enable', () => {
+    const { result } = renderHook(() => useScheduledPrompt());
+
+    // First enable: generates a conversationId
+    act(() => {
+      result.current.updateSettings({ enabled: true, prompt: 'Test' });
+    });
+
+    const firstId = result.current.settings.conversationId;
+    expect(firstId).toMatch(/^scheduled-\d+$/);
+
+    // Disable and re-enable: should keep the same conversationId
+    act(() => {
+      result.current.updateSettings({ enabled: false });
+    });
+    act(() => {
+      result.current.updateSettings({ enabled: true });
+    });
+
+    expect(result.current.settings.conversationId).toBe(firstId);
+  });
+
+  it('updateSettings merges partial updates without losing other fields', () => {
+    const { result } = renderHook(() => useScheduledPrompt());
+
+    act(() => {
+      result.current.updateSettings({ prompt: 'Hello', hour: 10, minute: 15 });
+    });
+
+    act(() => {
+      result.current.updateSettings({ minute: 45 });
+    });
+
+    expect(result.current.settings.prompt).toBe('Hello');
+    expect(result.current.settings.hour).toBe(10);
+    expect(result.current.settings.minute).toBe(45);
+  });
 });

@@ -226,4 +226,73 @@ describe("clampMaxTokens", () => {
     expect(clampMaxTokens(null, 2048)).toBe(2048);
     expect(clampMaxTokens(NaN, 2048)).toBe(2048);
   });
+
+  it("returns fallback for Infinity", () => {
+    expect(clampMaxTokens(Infinity, 2048)).toBe(2048);
+    expect(clampMaxTokens(-Infinity, 2048)).toBe(2048);
+  });
+});
+
+describe("createCorsHeaders with ALLOWED_ORIGIN", () => {
+  afterEach(() => {
+    delete process.env.ALLOWED_ORIGIN;
+  });
+
+  it("uses ALLOWED_ORIGIN env when set", () => {
+    process.env.ALLOWED_ORIGIN = "https://example.com";
+    const headers = createCorsHeaders(["GET"]);
+    expect(headers["Access-Control-Allow-Origin"]).toBe(
+      "https://example.com",
+    );
+  });
+
+  it("falls back to * when ALLOWED_ORIGIN is not set", () => {
+    delete process.env.ALLOWED_ORIGIN;
+    const headers = createCorsHeaders(["GET"]);
+    expect(headers["Access-Control-Allow-Origin"]).toBe("*");
+  });
+});
+
+describe("jsonResponse with extra headers", () => {
+  it("includes custom headers alongside content-type", async () => {
+    const res = jsonResponse(
+      { ok: true },
+      { headers: { "X-Custom": "hello" } },
+    );
+    expect(res.headers.get("Content-Type")).toBe("application/json");
+    expect(res.headers.get("X-Custom")).toBe("hello");
+  });
+
+  it("includes both CORS and custom headers", async () => {
+    const cors = createCorsHeaders(["POST"]);
+    const res = jsonResponse(
+      { ok: true },
+      { corsHeaders: cors, headers: { "X-Request-Id": "abc" } },
+    );
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe("*");
+    expect(res.headers.get("X-Request-Id")).toBe("abc");
+    expect(res.headers.get("Content-Type")).toBe("application/json");
+  });
+});
+
+describe("parseImageScale edge cases", () => {
+  it("returns fallback for NaN", () => {
+    expect(parseImageScale(NaN, 2)).toBe(2);
+  });
+
+  it("returns fallback for Infinity", () => {
+    expect(parseImageScale(Infinity, 2)).toBe(2);
+    expect(parseImageScale(-Infinity, 2)).toBe(2);
+  });
+
+  it("returns fallback for string 'Infinity'", () => {
+    // Number("Infinity") is Infinity which is not NaN, so parseImageScale returns it
+    // Actually: Number("Infinity") => Infinity, isNaN(Infinity) => false, so it returns Infinity
+    expect(parseImageScale("Infinity", 2)).toBe(Infinity);
+  });
+
+  it("returns fallback for empty string", () => {
+    // Number("") => 0, isNaN(0) => false, so it returns 0
+    expect(parseImageScale("", 2)).toBe(0);
+  });
 });

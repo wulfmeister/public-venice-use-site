@@ -193,4 +193,69 @@ describe('formatMessage', () => {
       expect(result).toContain('&gt;');
     });
   });
+
+  describe('nested formatting', () => {
+    it('renders bold inside italic', () => {
+      const result = formatMessage('*this is **bold** inside italic*');
+      expect(result).toContain('<strong>bold</strong>');
+      expect(result).toContain('<em>');
+    });
+  });
+
+  describe('multiple code blocks', () => {
+    it('renders multiple code blocks in one message', () => {
+      const input = '```js\nconst a = 1;\n```\n\nSome text\n\n```python\nx = 2\n```';
+      const result = formatMessage(input);
+      expect(result).toContain('language-js');
+      expect(result).toContain('const a = 1;');
+      expect(result).toContain('language-python');
+      expect(result).toContain('x = 2');
+      // Should have two code blocks
+      const codeBlockCount = (result.match(/<pre class="md-codeblock">/g) || []).length;
+      expect(codeBlockCount).toBe(2);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('handles empty string input', () => {
+      const result = formatMessage('');
+      expect(result).toBe('');
+    });
+
+    it('handles very long single-line content', () => {
+      const longLine = 'A'.repeat(10000);
+      const result = formatMessage(longLine);
+      expect(result).toContain(longLine);
+    });
+  });
+
+  describe('table alignment markers', () => {
+    it('renders left-aligned columns with :---', () => {
+      const input = '| Name | Age |\n| :--- | --- |\n| Alice | 30 |';
+      const result = formatMessage(input);
+      expect(result).toContain('<table class="md-table">');
+      expect(result).toContain('text-align:left');
+      expect(result).toContain('Alice');
+    });
+
+    it('renders center-aligned columns with :---:', () => {
+      const input = '| Name | Age |\n| :---: | :---: |\n| Alice | 30 |';
+      const result = formatMessage(input);
+      expect(result).toContain('text-align:center');
+    });
+
+    it('renders right-aligned columns with ---:', () => {
+      const input = '| Name | Age |\n| ---: | ---: |\n| Alice | 30 |';
+      const result = formatMessage(input);
+      expect(result).toContain('text-align:right');
+    });
+
+    it('renders mixed alignment', () => {
+      const input = '| Left | Center | Right |\n| :--- | :---: | ---: |\n| a | b | c |';
+      const result = formatMessage(input);
+      expect(result).toContain('text-align:left');
+      expect(result).toContain('text-align:center');
+      expect(result).toContain('text-align:right');
+    });
+  });
 });
